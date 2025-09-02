@@ -1,0 +1,28 @@
+---
+- name: Setup SSH Keys
+  hosts: all
+  gather_facts: false
+  vars_prompt:
+    - name: pi_password
+      prompt: "Enter Pi user password"
+      private: true
+      
+  tasks:
+    - name: Remove old known_hosts entry for the Pi
+      delegate_to: localhost
+      ansible.builtin.shell: |
+        ssh-keygen -f "{{ ansible_env.HOME }}/.ssh/known_hosts" -R "{{ ansible_host }}"
+      ignore_errors: true
+      changed_when: false
+    - name: Copy SSH key to Pi using password authentication
+      delegate_to: localhost
+      ansible.builtin.shell: |
+        sshpass -p "{{ pi_password }}" ssh-copy-id -o StrictHostKeyChecking=no -i {{ ssh_key }}.pub drew@{{ ansible_host }}
+      register: ssh_copy_result
+      
+    - name: Test SSH connection with key
+      ansible.builtin.ping:
+      
+    - name: SSH key setup complete
+      ansible.builtin.debug:
+        msg: "SSH key authentication is now working"

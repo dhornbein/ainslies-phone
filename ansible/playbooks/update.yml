@@ -1,0 +1,39 @@
+---
+- name: Update Ainslie Phone deployment
+  hosts: all
+  
+  tasks:
+    - name: Sync project files from local git
+      ansible.posix.synchronize:
+        src: "{{ playbook_dir }}/../../"
+        dest: "{{ deploy_path }}/"
+        delete: true
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=.ai"
+          - "--exclude=ansible"
+          - "--exclude=*.log"
+          - "--exclude=__pycache__"
+          - "--exclude=.DS_Store"
+        owner: false
+        group: false
+      become: true
+      become_user: "{{ project_user }}"
+      
+    - name: Set correct permissions on deployed files
+      ansible.builtin.file:
+        path: "{{ deploy_path }}"
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        recurse: true
+      become: true
+      
+    - name: Restart Asterisk service
+      ansible.builtin.systemd:
+        name: asterisk
+        state: restarted
+      become: true
+      
+    - name: Deployment complete
+      ansible.builtin.debug:
+        msg: "Code deployed to {{ deploy_path }} at {{ ansible_date_time.iso8601 }}"

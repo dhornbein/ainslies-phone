@@ -1,0 +1,42 @@
+---
+- name: Provision Raspberry Pi for Ainslie Phone
+  hosts: all
+  become: true
+  
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+        
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: true
+        autoclean: true
+        
+    - name: Install base packages
+      ansible.builtin.apt:
+        name: "{{ base_packages }}"
+        state: present
+        
+    - name: Install Asterisk packages
+      ansible.builtin.apt:
+        name: "{{ asterisk_packages }}"
+        state: present
+        
+    - name: Create project directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        mode: '0755'
+      loop:
+        - "{{ deploy_path }}"
+        
+    - name: Enable and start Asterisk service
+      ansible.builtin.systemd:
+        name: asterisk
+        enabled: true
+        state: started

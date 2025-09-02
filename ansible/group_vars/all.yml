@@ -1,0 +1,35 @@
+---
+# SSH Key on Dev system
+ssh_key: {{ ansible_env.HOME }}/.ssh/ainslie_phone_pi
+
+# Network configuration
+pi_static_ip: "192.168.50.10"
+pi_netmask: "255.255.255.0"
+ht801_ip: "192.168.50.20"
+
+# Project paths
+project_user: "drew"
+project_home: "/home/{{ project_user }}"
+deploy_path: "{{ project_home }}/ainslie-phone-live"
+
+# System packages
+base_packages:
+  - git
+  - python3
+  - python3-pip
+  - python3-venv
+  - build-essential
+  - vim
+  - nano
+  - htop
+  - screen
+  - tmux
+  - net-tools
+  - curl
+  - wget
+
+asterisk_packages:
+  - asterisk
+  - asterisk-modules
+  - sox
+  - alsa-utils
