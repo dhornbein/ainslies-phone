@@ -1,6 +1,7 @@
 ---
 # SSH Key on Dev system
-ssh_key: {{ ansible_env.HOME }}/.ssh/ainslie_phone_pi
+local_home: /home/drew
+ssh_key: "{{ local_home }}/.ssh/id_pi5_ainsile_phone"
 
 # Network configuration
 pi_static_ip: "192.168.50.10"

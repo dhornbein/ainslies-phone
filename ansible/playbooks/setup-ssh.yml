@@ -6,18 +6,30 @@
     - name: pi_password
       prompt: "Enter Pi user password"
       private: true
+  vars_files:
+    - ../group_vars/all.yml
       
   tasks:
     - name: Remove old known_hosts entry for the Pi
       delegate_to: localhost
       ansible.builtin.shell: |
-        ssh-keygen -f "{{ ansible_env.HOME }}/.ssh/known_hosts" -R "{{ ansible_host }}"
+        ssh-keygen -f "{{ local_home }}/.ssh/known_hosts" -R "{{ ansible_host }}"
       ignore_errors: true
       changed_when: false
+
+    - name: Create SSH key file if it does not exist
+      delegate_to: localhost
+      ansible.builtin.shell: |
+        if [ ! -f {{ ssh_key }} ]; then
+          ssh-keygen -t rsa -b 4096 -f {{ ssh_key }} -N "";
+        fi
+      args:
+        executable: /bin/bash
+
     - name: Copy SSH key to Pi using password authentication
       delegate_to: localhost
       ansible.builtin.shell: |
-        sshpass -p "{{ pi_password }}" ssh-copy-id -o StrictHostKeyChecking=no -i {{ ssh_key }}.pub drew@{{ ansible_host }}
+        sshpass -p "{{ pi_password }}" ssh-copy-id -o StrictHostKeyChecking=no -i {{ ssh_key }}.pub {{ ansible_user }}@{{ ansible_host }}
       register: ssh_copy_result
       
     - name: Test SSH connection with key

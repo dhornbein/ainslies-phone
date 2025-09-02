@@ -34,13 +34,6 @@ ansible/
 
 ## Setup Process
 
-### 0. Generate SSH Key (if not already done)
-Generate an Ed25519 SSH key for the Pi:
-
-```bash
-ssh-keygen -t ed25519 -C "ainslie-phone-desktop" -f ~/.ssh/ainslie_phone_pi -N ""
-```
-
 ### 1. Setup SSH Key Authentication
 Run the SSH setup playbook (you'll be prompted for the Pi password):
 
