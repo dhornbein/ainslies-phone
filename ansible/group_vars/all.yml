@@ -29,8 +29,11 @@ base_packages:
   - curl
   - wget
 
-asterisk_packages:
-  - asterisk
-  - asterisk-modules
-  - sox
-  - alsa-utils
+# Asterisk source installation
+asterisk_version: "18"
+asterisk_tarball: "asterisk-{{ asterisk_version }}-current.tar.gz"
+asterisk_download_url: "https://downloads.asterisk.org/pub/telephony/asterisk/{{ asterisk_tarball }}"
+asterisk_source_dir: "asterisk-{{ asterisk_version }}.*"  # Will match extracted directory
+
+# Disable native architecture optimization for VMs (set to true if needed)
+disable_build_native: false

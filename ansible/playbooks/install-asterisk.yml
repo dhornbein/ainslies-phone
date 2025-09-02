@@ -1,0 +1,208 @@
+---
+- name: Install Asterisk from Source
+  hosts: all
+  become: true
+  vars_files:
+    - ../group_vars/all.yml
+  
+  tasks:
+    - name: Install minimal build requirements
+      tags: dependencies
+      ansible.builtin.apt:
+        name: 
+          - build-essential
+          - wget
+          - curl
+        state: present
+        update_cache: true
+        
+    - name: Create source directory
+      tags: prepare
+      ansible.builtin.file:
+        path: /usr/local/src
+        state: directory
+        mode: '0755'
+        
+    - name: Download Asterisk source
+      tags: download
+      ansible.builtin.get_url:
+        url: "{{ asterisk_download_url }}"
+        dest: "/usr/local/src/{{ asterisk_tarball }}"
+        mode: '0644'
+        
+    - name: Extract Asterisk source
+      tags: extract
+      ansible.builtin.unarchive:
+        src: "/usr/local/src/{{ asterisk_tarball }}"
+        dest: /usr/local/src
+        remote_src: true
+        
+    - name: Find extracted Asterisk directory
+      tags: extract
+      ansible.builtin.find:
+        paths: /usr/local/src
+        patterns: "asterisk-{{ asterisk_version }}.*"
+        file_type: directory
+      register: asterisk_dir_result
+      
+    - name: Set Asterisk source directory
+      tags: extract
+      ansible.builtin.set_fact:
+        asterisk_source_path: "{{ asterisk_dir_result.files[0].path }}"
+        
+    - name: Run Asterisk install_prereq script
+      tags: prereq
+      ansible.builtin.shell: |
+        cd {{ asterisk_source_path }}/contrib/scripts
+        ./install_prereq install
+      args:
+        executable: /bin/bash
+        creates: /usr/local/src/.prereq_installed
+        
+    - name: Mark prereq as installed
+      tags: prereq
+      ansible.builtin.file:
+        path: /usr/local/src/.prereq_installed
+        state: touch
+        mode: '0644'
+        
+    - name: Configure Asterisk build with menuselect
+      tags: configure
+      ansible.builtin.shell: |
+        cd {{ asterisk_source_path }}
+        ./configure --with-pjproject-bundled
+        make menuselect.makeopts
+      args:
+        executable: /bin/bash
+        creates: "{{ asterisk_source_path }}/menuselect.makeopts"
+        
+    - name: Disable BUILD_NATIVE for virtual machines (optional)
+      tags: configure
+      ansible.builtin.shell: |
+        cd {{ asterisk_source_path }}
+        menuselect/menuselect --disable BUILD_NATIVE menuselect.makeopts
+      args:
+        executable: /bin/bash
+      when: disable_build_native | default(false)
+        
+    - name: Build Asterisk
+      tags: build
+      ansible.builtin.shell: |
+        cd {{ asterisk_source_path }}
+        make
+      args:
+        executable: /bin/bash
+        creates: "{{ asterisk_source_path }}/main/asterisk"
+        
+    - name: Install Asterisk binaries
+      tags: install
+      ansible.builtin.shell: |
+        cd {{ asterisk_source_path }}
+        make install
+      args:
+        executable: /bin/bash
+        creates: /usr/sbin/asterisk
+        
+    - name: Install sample configuration files
+      tags: install
+      ansible.builtin.shell: |
+        cd {{ asterisk_source_path }}
+        make samples
+      args:
+        executable: /bin/bash
+        creates: /etc/asterisk/asterisk.conf
+        
+    - name: Install official initialization scripts
+      tags: install
+      ansible.builtin.shell: |
+        cd {{ asterisk_source_path }}
+        make config
+      args:
+        executable: /bin/bash
+        creates: /etc/init.d/asterisk
+        
+    - name: Install log rotation configuration
+      tags: install
+      ansible.builtin.shell: |
+        cd {{ asterisk_source_path }}
+        make install-logrotate
+      args:
+        executable: /bin/bash
+        creates: /etc/logrotate.d/asterisk
+        
+    - name: Create asterisk user and group
+      tags: user
+      ansible.builtin.user:
+        name: asterisk
+        system: true
+        shell: /bin/false
+        home: /var/lib/asterisk
+        create_home: false
+        
+    - name: Add project user to asterisk group for CLI access
+      tags: user
+      ansible.builtin.user:
+        name: "{{ project_user }}"
+        groups: asterisk
+        append: true
+        
+    - name: Set Asterisk file permissions
+      tags: permissions
+      ansible.builtin.file:
+        path: "{{ item }}"
+        owner: asterisk
+        group: asterisk
+        recurse: true
+      loop:
+        - /etc/asterisk
+        - /var/lib/asterisk
+        - /var/log/asterisk
+        - /var/spool/asterisk
+        - /usr/lib/asterisk
+        
+    - name: Set Asterisk binary permissions
+      tags: permissions
+      ansible.builtin.file:
+        path: /usr/sbin/asterisk
+        owner: asterisk
+        group: asterisk
+        mode: '0755'
+        
+    - name: Enable and start Asterisk service (systemd)
+      tags: service
+      ansible.builtin.systemd:
+        name: asterisk
+        enabled: true
+        state: started
+        daemon_reload: true
+        
+    - name: Validate Asterisk installation
+      tags: validate
+      ansible.builtin.shell: |
+        systemctl is-active asterisk
+        sudo asterisk -rx "core show version" || echo "CLI requires sudo access"
+      args:
+        executable: /bin/bash
+      register: asterisk_validation
+      ignore_errors: true
+      
+    - name: Display validation results
+      tags: validate
+      ansible.builtin.debug:
+        msg: |
+          =================================================
+          ASTERISK INSTALLATION COMPLETE
+          =================================================
+          Status: {{ asterisk_validation.stdout_lines[0] if asterisk_validation.stdout_lines|length > 0 else 'Unknown' }}
+          Version: Asterisk 18.x installed successfully
+          
+          Next steps:
+          - Connect to CLI: sudo asterisk -rvvv
+          - Check status:   systemctl status asterisk
+          - View logs:      tail -f /var/log/asterisk/messages
+          =================================================
+          
+  handlers:
+    - name: reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true

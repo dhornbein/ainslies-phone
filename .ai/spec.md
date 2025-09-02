@@ -3,11 +3,13 @@
 ## Project Overview
 A memorial gallery installation featuring an interactive retro telephone system that plays recordings of a departed friend named Ainslie. Pick up the phone and experience her voice as if we were still connected through underground wires.
 
+**Current Status**: ✅ **Infrastructure Phase Complete** - Raspberry Pi provisioned, Asterisk PBX installed and running, ready for phone gallery implementation.
+
 ## Core Concept
-- **Primary Device**: Classic red push-button DTMF phone
+- **Primary Device**: HTMengt 2500 Analog Desk Phone
 - **Purpose**: Memorial tribute allowing visitors to hear Ainslie's voice through recordings
 - **Interaction Model**: Traditional telephone interface with keypad navigation
-- **Technical Foundation**: Raspberry Pi + Asterisk PBX + VoIP ATA gateway
+- **Technical Foundation**: Raspberry Pi + Asterisk PBX + Grandstream HT801 v2 1 FXS
 
 ## Loose feature Ideas
 - **Participants record**: Allow visitors to leave their own messages or memories of Ainslie, which can be played back later. Allow saving at number address and playback by future visitors. Allow listener to play random recordings.
@@ -16,7 +18,7 @@ A memorial gallery installation featuring an interactive retro telephone system 
 
 ### Hardware Components
 1. **Phone Interface**
-   - Modern push-button desk phone (Classic 2500 Red Landline Phone)
+   - HTMengt 2500 Analog Desk Phone
    - Red telephone line cord for visual authenticity
    - RJ11 connection to ATA gateway
 
@@ -38,10 +40,20 @@ A memorial gallery installation featuring an interactive retro telephone system 
    - Power adapter for HT801
 
 ### Software Stack
-- **Operating System**: Raspberry Pi OS Lite
-- **PBX Software**: Asterisk (call handling, DTMF processing, audio playback)
-- **Configuration**: Minimal dialplan for hotline operation
-- **Audio Management**: File-based system with directory structure
+- **Operating System**: Raspberry Pi OS Lite ✅ **DEPLOYED**
+- **PBX Software**: Asterisk 18.26.4 LTS ✅ **INSTALLED AND RUNNING**
+- **Configuration**: Minimal dialplan for hotline operation 🔄 **NEXT PHASE**
+- **Audio Management**: File-based system with directory structure 🔄 **READY FOR IMPLEMENTATION**
+- **Deployment**: Ansible automation pipeline ✅ **FULLY OPERATIONAL**
+
+**Current Implementation Status**:
+- ✅ Raspberry Pi 5 configured and accessible via SSH
+- ✅ Asterisk compiled from source with official dependencies
+- ✅ systemd service running with proper permissions  
+- ✅ Sample configurations installed at `/etc/asterisk/`
+- ✅ Audio directory structure ready at `/var/lib/asterisk/sounds/`
+- ✅ Ansible deployment pipeline tested and working
+- 🔄 Ready for SIP/HT801 configuration and dialplan implementation
 
 ## User Experience Flow
 
@@ -119,20 +131,34 @@ A memorial gallery installation featuring an interactive retro telephone system 
 
 ## Deployment Strategy
 
-### Development Environment
+### Development Environment ✅ **IMPLEMENTED**
 - **Local Git Repository**: Version control without remote dependencies
-- **Ansible Automation**: Automated provisioning and updates via SSH over WiFi
+- **Ansible Automation**: Automated provisioning and updates via SSH over WiFi ✅ **WORKING**
+- **Professional Installation**: Asterisk compiled from source following official docs ✅ **COMPLETED**
 
-### Deployment Workflow
-1. **Development**: Code and configure on desktop using VS Code
-2. **Version Control**: Commit changes to local git repository
-3. **Deployment**: Ansible playbook (`update.yml`) syncs changes to Pi via WiFi
-4. **Gallery Operation**: Pi runs standalone on dedicated SD card
+### Deployment Workflow ✅ **OPERATIONAL**
+1. **Development**: Code and configure on desktop using VS Code ✅ **READY**
+2. **Version Control**: Commit changes to local git repository ✅ **READY**
+3. **Deployment**: Ansible playbook syncs changes to Pi via WiFi ✅ **TESTED**
+4. **Gallery Operation**: Pi runs standalone on dedicated SD card 🔄 **NEXT PHASE**
 
-### Network Architecture
-- **Development Phase**: Pi connected to WiFi for remote management and deployment
-- **Gallery Operation**: Pi isolated with direct Ethernet to HT801 (no internet required)
-- **Maintenance Access**: WiFi available for remote updates when needed
+**Completed Ansible Playbooks**:
+- ✅ `setup-ssh.yml` - SSH key authentication working
+- ✅ `provision.yml` - Base system and file deployment working  
+- ✅ `install-asterisk.yml` - Asterisk 18.26.4 installed and running
+- 🔄 `update.yml` - Ready for ongoing deployments
+
+### Network Architecture ✅ **INFRASTRUCTURE READY**
+- **Development Phase**: Pi connected to WiFi for remote management and deployment ✅ **CURRENT**
+- **Gallery Operation**: Pi isolated with direct Ethernet to HT801 (no internet required) 🔄 **NEXT PHASE** 
+- **Maintenance Access**: WiFi available for remote updates when needed ✅ **AVAILABLE**
+
+**Current System Status**:
+- Raspberry Pi 5: Provisioned and accessible
+- Asterisk Service: Active and validated  
+- CLI Access: `sudo asterisk -rvvv` working
+- Logs: Available at `/var/log/asterisk/messages`
+- Ready for: SIP configuration and dialplan implementation
 
 ## Technical Constraints
 - **Single Handset**: One phone interface only

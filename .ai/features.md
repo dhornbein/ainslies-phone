@@ -167,7 +167,7 @@
 
 ## Deployment & Development Features
 
-### F601: Local Git Version Control
+### F601: Local Git Version Control ✅ **IMPLEMENTED**
 **Description**: Track all project changes in local git repository
 **Benefits**:
 - Complete change history without external dependencies
@@ -177,6 +177,37 @@
 **Technical**: Local git repository on desktop development environment
 
 ### F602: Ansible Automated Deployment
+**Description**: One-command deployment and updates via Ansible playbooks
+**Status**: ✅ **IMPLEMENTED AND TESTED**
+**Capabilities**:
+- `setup-ssh.yml`: Configure SSH key authentication ✅ **WORKING**
+- `provision.yml`: Basic system setup and file deployment ✅ **WORKING**
+- `install-asterisk.yml`: Professional Asterisk installation from source ✅ **WORKING**
+- `update.yml`: Deploy code/config changes (ready for use)
+- `deploy-audio.yml`: Update audio content only (future)
+- `maintenance.yml`: System health checks and repairs (future)
+**Technical**: SSH over WiFi connection with ansible-playbook execution
+
+**Current Installation Results**:
+```bash
+# Successful deployment completed:
+ansible-playbook playbooks/setup-ssh.yml     # ✅ SSH keys configured
+ansible-playbook playbooks/provision.yml     # ✅ Base system ready  
+ansible-playbook playbooks/install-asterisk.yml  # ✅ Asterisk 18.26.4 running
+
+# Ready for next phase:
+ansible-playbook playbooks/update.yml        # 🔄 Code deployment ready
+```
+
+**Asterisk Installation Features** ✅ **COMPLETED**:
+- Downloads latest Asterisk 18 LTS source automatically
+- Uses official `install_prereq` script for dependencies  
+- Includes bundled PJSIP for SIP support
+- Creates dedicated asterisk user with proper permissions
+- Installs systemd service with restart policies
+- Professional from-source build following official documentation
+- Total installation time: ~12 minutes with full compilation
+- Service validation and health checks included: Ansible Automated Deployment
 **Description**: One-command deployment and updates via Ansible playbooks
 **Capabilities**:
 - `provision.yml`: Full system setup from fresh Pi
@@ -193,15 +224,6 @@
 - Network settings and IP assignments
 - System service parameters
 **Technical**: Ansible template-based configuration deployment
-
-### F607: Local Git Deployment Source
-**Description**: Pi pulls updates directly from desktop git repository
-**Implementation**:
-- Desktop git repository as deployment source
-- Ansible copies/syncs specific files to Pi
-- No external git hosting required
-- Local network git access via SSH
-**Technical**: Git archive or rsync-based file transfer in Ansible
 
 ### F608: One-Command Updates
 **Description**: Single command deploys all changes to Pi

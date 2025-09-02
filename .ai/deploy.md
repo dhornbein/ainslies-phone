@@ -18,18 +18,20 @@ When flashing the SD card with Raspberry Pi Imager:
 5. **Set hostname**: `pi5phone`
 
 ## Ansible Structure
-The project uses this simple Ansible structure:
+The project uses this comprehensive Ansible structure:
 ```
 ansible/
 ├── ansible.cfg              # Ansible configuration
 ├── inventory/
 │   └── hosts.yml            # Pi connection details
 ├── group_vars/
-│   └── all.yml              # Project variables
-└── playbooks/
-    ├── setup-ssh.yml        # Initial SSH key setup
-    ├── provision.yml        # Full system setup
-    └── update.yml           # Deploy code changes
+│   └── all.yml              # Project variables and Asterisk config
+├── playbooks/
+│   ├── setup-ssh.yml        # Initial SSH key setup
+│   ├── provision.yml        # Basic system setup and file deployment
+│   ├── install-asterisk.yml # Professional Asterisk installation from source
+│   └── update.yml           # Deploy code changes
+└── templates/               # Configuration templates (future)
 ```
 
 ## Setup Process
@@ -42,21 +44,43 @@ cd ansible
 ansible-playbook playbooks/setup-ssh.yml
 ```
 
+**Status: ✅ COMPLETED** - SSH key authentication working successfully.
+
 ### 2. Provision the Pi
-Run the full provisioning playbook:
+Run the basic provisioning playbook:
 
 ```bash
 ansible-playbook playbooks/provision.yml
 ```
 
-This will:
-- Update all system packages
-- Install required packages (git, python3, Asterisk, etc.)
-- Configure static IP (192.168.50.10/24)
-- Create project directories
-- Enable Asterisk service
+**Status: ✅ COMPLETED** - Basic system packages installed and project files deployed.
 
-### 3. Deploy Code
+### 3. Install Asterisk from Source
+Install Asterisk with all dependencies using the comprehensive installation playbook:
+
+```bash
+ansible-playbook playbooks/install-asterisk.yml
+```
+
+**Status: ✅ COMPLETED** - Asterisk 18.26.4 successfully installed and running.
+
+This comprehensive installation:
+- ✅ Downloads latest Asterisk 18 LTS source code
+- ✅ Uses official `install_prereq` script for all dependencies  
+- ✅ Configures build with menuselect automation
+- ✅ Compiles Asterisk from source (~8 minutes)
+- ✅ Installs binaries, sample configs, init scripts, log rotation
+- ✅ Creates asterisk user with proper permissions
+- ✅ Starts systemd service and validates installation
+- ✅ Total installation time: ~12 minutes
+
+**Installation Results:**
+- Service Status: `active`
+- Version: Asterisk 18.26.4
+- CLI Access: `sudo asterisk -rvvv`
+- Logs: `/var/log/asterisk/messages`
+
+### 4. Deploy Code Updates
 Deploy your code to the Pi:
 
 ```bash
@@ -73,26 +97,67 @@ ansible-playbook playbooks/update.yml
 
 ### Available Commands
 ```bash
-# Full system provision (fresh Pi)
-ansible-playbook playbooks/provision.yml
-
-# Deploy code changes
-ansible-playbook playbooks/update.yml
-
 # Setup SSH keys (first time only)
 ansible-playbook playbooks/setup-ssh.yml
 
+# Basic system provision (fresh Pi)
+ansible-playbook playbooks/provision.yml
+
+# Install Asterisk from source (after provision)
+ansible-playbook playbooks/install-asterisk.yml
+
+# Deploy code changes (when ready)
+ansible-playbook playbooks/update.yml
+
 # Test connectivity
 ansible all -m ping
+
+# Run specific deployment tags
+ansible-playbook playbooks/install-asterisk.yml --tags=dependencies,download
+ansible-playbook playbooks/provision.yml --tags=update,install
 ```
 
-### Directory Structure on Pi
+## Asterisk Management
+
+### Connecting to Asterisk CLI
+After installation, connect to the Asterisk command-line interface:
+
+```bash
+# SSH to the Pi
+ssh pi5phone
+
+# Connect to Asterisk CLI (requires sudo)
+sudo asterisk -rvvv
 ```
-/home/drew/
-└── ainslie-phone-live/         # Live code (deployed via Ansible)
-    ├── src/
-    ├── config/
-    └── ...
+
+### Useful Asterisk CLI Commands
+```bash
+# Show Asterisk version
+core show version
+
+# Show active channels
+core show channels
+
+# Show SIP endpoints
+pjsip show endpoints
+
+# Reload configuration
+core reload
+
+# Exit CLI
+exit
+```
+
+### Checking Asterisk Status
+```bash
+# Service status
+sudo systemctl status asterisk
+
+# View real-time logs
+sudo tail -f /var/log/asterisk/messages
+
+# Restart service if needed
+sudo systemctl restart asterisk
 ```
 
 ## Customizing Deployment
