@@ -1,0 +1,105 @@
+---
+- name: Setup network configuration
+  ansible.builtin.import_playbook: network-setup.yml
+
+- name: Deploy Asterisk configurations
+  hosts: all
+  become: true
+  vars_files:
+    - ../group_vars/all.yml
+  handlers:
+    - import_tasks: ../handlers/main.yml
+
+  tasks:
+    - name: Deploy Asterisk configurations
+      ansible.builtin.template:
+        src: "../templates/{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: '0644'
+        backup: yes
+      loop:
+        - { src: 'pjsip.conf.j2', dest: '/etc/asterisk/pjsip.conf' }
+        - { src: 'extensions.conf.j2', dest: '/etc/asterisk/extensions.conf' }
+      notify: 
+        - Reload Asterisk PJSIP
+        - Reload Asterisk Dialplan
+      tags: asterisk_config
+
+    - name: Force Asterisk configuration reload
+      meta: flush_handlers
+      tags: asterisk_config
+
+    - name: Wait for Asterisk to stabilize
+      ansible.builtin.wait_for:
+        timeout: 5
+      tags: asterisk_config
+
+- name: Auto-provision HT801
+  ansible.builtin.import_playbook: ht801-autoprovision.yml
+
+- name: Final verification and status
+  hosts: all
+  become: true
+  vars_files:
+    - ../group_vars/all.yml
+
+  tasks:
+    - name: Test HT801 HTTP connectivity
+      ansible.builtin.uri:
+        url: "http://{{ ht801_ip }}"
+        method: GET
+        status_code: [200, 401, 403]
+        timeout: 10
+      register: ht801_http_test
+      ignore_errors: true
+      tags: verify
+
+    - name: Test HT801 port 80 accessibility
+      ansible.builtin.wait_for:
+        host: "{{ ht801_ip }}"
+        port: 80
+        timeout: 5
+      register: ht801_port_test
+      ignore_errors: true
+      tags: verify
+
+    - name: Check Asterisk service status
+      ansible.builtin.systemd:
+        name: asterisk
+      register: asterisk_status
+      tags: verify
+
+    - name: Display final setup status
+      ansible.builtin.debug:
+        msg: |
+          
+          🎉 Ainslie Phone Gallery Setup Complete!
+          
+          System Status:
+          - Pi Network: ✅ Configured ({{ pi_static_ip }})
+          - Asterisk: {% if asterisk_status.status.ActiveState == 'active' %}✅ Running{% else %}❌ Not running{% endif %}
+          - HT801 HTTP: {% if ht801_http_test.status is defined %}✅ Accessible{% else %}⚠️ Not accessible{% endif %}
+          - HT801 Port: {% if ht801_port_test.elapsed is defined %}✅ Reachable{% else %}⚠️ Unreachable{% endif %}
+          
+          Testing Instructions:
+          1. Pick up the phone handset
+          2. You should hear a dial tone
+          3. Dial any 3-digit number (e.g., 123)
+          4. You should hear the "hello-world" message
+          
+          {% if ht801_http_test.status is not defined %}
+          Manual HT801 Setup Required:
+          1. Pick up phone, dial ***, then 02 to get current IP
+          2. SSH tunnel: ssh -L 8080:<current_ip>:80 drew@pi5phone
+          3. Web interface: http://localhost:8080
+          4. Login: admin/admin or admin/Phone2Pi
+          5. Configure as shown in ~/ht801-config-summary.txt
+          {% endif %}
+          
+          Troubleshooting:
+          - Check logs: sudo tail -f /var/log/asterisk/messages
+          - Asterisk CLI: sudo asterisk -rvvv
+          - SIP status: sudo asterisk -rx "pjsip show endpoints"
+      tags: summary

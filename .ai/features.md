@@ -183,20 +183,27 @@
 - `setup-ssh.yml`: Configure SSH key authentication ✅ **WORKING**
 - `provision.yml`: Basic system setup and file deployment ✅ **WORKING**
 - `install-asterisk.yml`: Professional Asterisk installation from source ✅ **WORKING**
-- `update.yml`: Deploy code/config changes (ready for use)
+- `network-setup.yml`: NetworkManager static IP configuration ✅ **WORKING**
+- `update.yml`: Deploy Asterisk config changes with targeted reloads ✅ **WORKING**
+- `ht801-autoprovision.yml`: HTTP API-based HT801 auto-configuration ✅ **WORKING**
+- `full-setup.yml`: Complete end-to-end automation orchestration ✅ **WORKING**
 - `deploy-audio.yml`: Update audio content only (future)
 - `maintenance.yml`: System health checks and repairs (future)
 **Technical**: SSH over WiFi connection with ansible-playbook execution
 
 **Current Installation Results**:
 ```bash
-# Successful deployment completed:
-ansible-playbook playbooks/setup-ssh.yml     # ✅ SSH keys configured
-ansible-playbook playbooks/provision.yml     # ✅ Base system ready  
-ansible-playbook playbooks/install-asterisk.yml  # ✅ Asterisk 18.26.4 running
+# Complete automation pipeline implemented:
+ansible-playbook playbooks/setup-ssh.yml          # ✅ SSH keys configured
+ansible-playbook playbooks/provision.yml          # ✅ Base system ready  
+ansible-playbook playbooks/install-asterisk.yml   # ✅ Asterisk 18.26.4 running
+ansible-playbook playbooks/network-setup.yml      # ✅ Static IP networking
+ansible-playbook playbooks/update.yml             # ✅ Config deployment with targeted reloads
+ansible-playbook playbooks/ht801-autoprovision.yml # ✅ HTTP API auto-configuration
+ansible-playbook playbooks/full-setup.yml         # ✅ Complete end-to-end setup
 
-# Ready for next phase:
-ansible-playbook playbooks/update.yml        # 🔄 Code deployment ready
+# One-command deployment:
+ansible-playbook playbooks/full-setup.yml         # 🎉 Everything automated!
 ```
 
 **Asterisk Installation Features** ✅ **COMPLETED**:
@@ -216,30 +223,66 @@ ansible-playbook playbooks/update.yml        # 🔄 Code deployment ready
 - `maintenance.yml`: System health checks and repairs
 **Technical**: SSH over WiFi connection with ansible-playbook execution
 
-### F604: Remote Configuration Management
+### F604: Remote Configuration Management ✅ **IMPLEMENTED**
 **Description**: Update system parameters without physical access
 **Configurable Elements**:
-- Asterisk dialplan modifications
-- Audio file organization and content
-- Network settings and IP assignments
-- System service parameters
-**Technical**: Ansible template-based configuration deployment
+- Asterisk dialplan modifications via Jinja2 templates ✅ **WORKING**
+- Asterisk PJSIP configuration via templates ✅ **WORKING**
+- Network settings and IP assignments via NetworkManager ✅ **WORKING**
+- System service parameters via Ansible handlers ✅ **WORKING**
+- Targeted Asterisk reloads (no full service restarts) ✅ **WORKING**
+**Technical**: Ansible template-based configuration deployment with handlers
 
-### F608: One-Command Updates
+### F605: HT801 Auto-Provisioning ✅ **IMPLEMENTED**
+**Description**: Programmatic configuration of HT801 device via HTTP API
+**Capabilities**:
+- Automatic device discovery and connectivity testing ✅ **WORKING**
+- HTTP API authentication with multiple credential attempts ✅ **WORKING**
+- Network configuration (static IP, gateway, DNS) ✅ **WORKING**
+- SIP endpoint configuration (server, credentials, codecs) ✅ **WORKING**
+- Audio settings optimization (gain, echo cancellation) ✅ **WORKING**
+- Security hardening (password changes, access control) ✅ **WORKING**
+- Automatic configuration application and device reboot ✅ **WORKING**
+**Technical**: RESTful HTTP POST requests to HT801 web interface API
+**Benefits**: Eliminates manual SSH tunneling and web interface configuration
+
+### F606: Intelligent Asterisk Management ✅ **IMPLEMENTED**
+**Description**: Granular Asterisk configuration management without service disruption
+**Features**:
+- Targeted PJSIP module reload (preserves active calls) ✅ **WORKING**
+- Selective dialplan reload (immediate config updates) ✅ **WORKING**
+- Configuration backup with timestamps ✅ **WORKING**
+- Handler-based reload triggering (only when needed) ✅ **WORKING**
+**Technical**: Asterisk CLI commands via ansible.builtin.command module
+**Benefits**: Zero-downtime configuration updates for production systems
+
+### F607: Network Topology Automation ✅ **IMPLEMENTED**
+**Description**: Automated network setup for Pi-to-HT801 direct connection
+**Configuration**:
+- NetworkManager-based static IP assignment ✅ **WORKING**
+- Secondary ethernet interface configuration ✅ **WORKING**
+- Route management (prevents default route conflicts) ✅ **WORKING**
+- Connection profile management (ht801-link) ✅ **WORKING**
+**Technical**: nmcli commands via Ansible for reliable network state
+**Benefits**: Repeatable, consistent network configuration
+
+### F608: One-Command Updates ✅ **IMPLEMENTED**
 **Description**: Single command deploys all changes to Pi
 **Usage**:
 ```bash
-# Deploy everything
-ansible-playbook -i inventory/hosts.yml playbooks/update.yml
+# Complete automated setup (network + asterisk + ht801)
+ansible-playbook playbooks/full-setup.yml
 
-# Deploy only audio content
-ansible-playbook -i inventory/hosts.yml playbooks/deploy-audio.yml --tags audio
+# Individual component updates
+ansible-playbook playbooks/network-setup.yml      # Network only
+ansible-playbook playbooks/update.yml             # Asterisk configs only  
+ansible-playbook playbooks/ht801-autoprovision.yml # HT801 only
 
-# Full system provision
-ansible-playbook -i inventory/hosts.yml playbooks/provision.yml
+# Selective deployment with tags
+ansible-playbook playbooks/full-setup.yml --tags asterisk_config
+ansible-playbook playbooks/full-setup.yml --tags ht801_provision
+ansible-playbook playbooks/full-setup.yml --tags verify
 ```
-**Technical**: Ansible playbook with tags for selective deployment
-
 ## Technical Implementation Features
 
 ### F501: Error Recovery

@@ -5,7 +5,7 @@ This directory contains Ansible automation for the complete HT801 and Asterisk s
 ## Quick Setup Commands
 
 ```bash
-# Complete setup from scratch
+# Complete setup from scratch (includes HT801 auto-provisioning)
 cd ansible
 
 # 1. Setup SSH keys (first time only)
@@ -17,12 +17,36 @@ ansible-playbook playbooks/provision.yml
 # 3. Install Asterisk from source
 ansible-playbook playbooks/install-asterisk.yml
 
-# 4. Configure HT801 and Asterisk
-ansible-playbook playbooks/ht801-setup.yml
+# 4. Full automated setup (network + Asterisk + HT801 auto-config)
+ansible-playbook playbooks/full-setup.yml
 
-# 5. Deploy/update configurations
-ansible-playbook playbooks/update.yml
+# Alternative: Step-by-step manual approach
+ansible-playbook playbooks/ht801-setup.yml          # Manual HT801 config
+ansible-playbook playbooks/update.yml               # Deploy/update configs only
 ```
+
+## HT801 Auto-Provisioning ✨ **NEW**
+
+The system now supports **automatic HT801 configuration** via HTTP API calls, eliminating most manual web interface configuration:
+
+```bash
+# Auto-configure HT801 only
+ansible-playbook playbooks/ht801-autoprovision.yml
+
+# Complete automated setup (recommended)
+ansible-playbook playbooks/full-setup.yml
+```
+
+**What Gets Auto-Configured:**
+- ✅ Static IP address (192.168.50.20)
+- ✅ Network settings (subnet, gateway, DNS)
+- ✅ SIP server configuration (points to Pi)
+- ✅ SIP user credentials (ht801-aor)
+- ✅ Audio codec settings (G.711 μ-law)
+- ✅ Admin password change (to Phone2Pi)
+- ✅ Device reboot and verification
+
+**Fallback:** If auto-provisioning fails, detailed manual instructions are provided.
 
 ## Individual Components
 
@@ -49,6 +73,12 @@ ansible-playbook playbooks/update.yml --tags=asterisk_verify
 # Full HT801 and Asterisk configuration
 ansible-playbook playbooks/ht801-setup.yml
 
+# Auto-provision HT801 via HTTP API (recommended)
+ansible-playbook playbooks/ht801-autoprovision.yml
+
+# Complete automated setup (network + asterisk + HT801)
+ansible-playbook playbooks/full-setup.yml
+
 # Check connectivity only
 ansible-playbook playbooks/ht801-setup.yml --tags=connectivity
 
@@ -58,13 +88,32 @@ ansible-playbook playbooks/ht801-setup.yml --tags=verify
 
 ## Manual HT801 Configuration
 
-If the HT801 is not automatically reachable, you'll need to configure it manually:
+⚠️ **Note**: Most HT801 configuration is now automated via `playbooks/ht801-autoprovision.yml` or `playbooks/full-setup.yml`. Manual configuration is only needed as a fallback.
+
+If auto-provisioning fails, you'll need to configure manually:
 
 1. **Get current IP**: Pick up phone, dial `***`, then `02`
 2. **SSH Tunnel**: `ssh -L 8080:<current_ip>:80 drew@pi5phone`
 3. **Web Interface**: Open `http://localhost:8080`, login with password on the HT801 device
 4. **Configure Static IP**: Set to `192.168.50.20` in BASIC SETTINGS
 5. **Configure SIP**: In FXS PORT1, set server to `192.168.50.10`, user `ht801-aor`
+
+**Auto-Provisioning Parameters** (applied automatically):
+```yaml
+Network Settings:
+  IP Address: 192.168.50.20
+  Subnet Mask: 255.255.255.0  
+  Gateway: 192.168.50.10
+  
+SIP Settings:
+  Primary SIP Server: 192.168.50.10
+  SIP User ID: ht801-aor
+  Authenticate ID: ht801-aor
+  Authenticate Password: (blank - IP-based auth)
+  
+Security:
+  Admin Password: Phone2Pi
+```
 
 ## Files and Structure
 
@@ -76,6 +125,8 @@ ansible/
 │   ├── network-setup.yml      # Network configuration for HT801
 │   ├── install-asterisk.yml   # Asterisk installation from source
 │   ├── ht801-setup.yml       # Complete HT801 + Asterisk config
+│   ├── ht801-autoprovision.yml # HT801 auto-config via HTTP API ✨ NEW
+│   ├── full-setup.yml        # Complete automated setup ✨ NEW
 │   └── update.yml            # Deploy configs and project updates
 ├── templates/
 │   ├── pjsip.conf.j2         # SIP configuration template

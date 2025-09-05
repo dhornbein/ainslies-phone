@@ -8,6 +8,10 @@ pi_static_ip: "192.168.50.10"
 pi_netmask: "255.255.255.0"
 ht801_ip: "192.168.50.20"
 
+# HT801 Auto-provisioning
+ht801_admin_password: "Phone2Pi"
+ht801_sip_user: "ht801-aor"
+
 # Project paths
 project_user: "drew"
 project_home: "/home/{{ project_user }}"

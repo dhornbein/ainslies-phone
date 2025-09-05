@@ -1,0 +1,298 @@
+# DANGER THIS DOESN'T WORK
+---
+- name: Auto-Configure HT801 via HTTP API
+  hosts: all
+  become: true
+  vars_files:
+    - ../group_vars/all.yml
+  handlers:
+    - import_tasks: ../handlers/main.yml
+
+  vars:
+    # HT801 default admin credentials
+    ht801_default_user: "admin"
+    ht801_default_pass: "admin"
+    ht801_new_password: "Phone2Pi"
+    
+    # Configuration parameters for HT801
+    ht801_config:
+      # Network Configuration
+      dhcp: "0"  # Disable DHCP
+      ip: "{{ ht801_ip }}"
+      netmask: "{{ pi_netmask }}"
+      gateway: "{{ pi_static_ip }}"
+      dns1: "{{ pi_static_ip }}"
+      
+      # SIP Configuration
+      sip_server: "{{ pi_static_ip }}"
+      sip_user_id: "ht801-aor"
+      sip_auth_id: "ht801-aor"
+      sip_auth_password: ""  # Empty for IP-based auth
+      register_expiration: "60"
+      sip_transport: "0"  # UDP
+      
+      # F001: Hotline/Auto-dial Configuration for Phone Pickup Detection
+      offhook_auto_dial: "0"  # Dial 's' extension immediately on off-hook
+      auto_dial_delay: "0"    # No delay - immediate dial on pickup
+      disable_dial_tone: "1"  # Disable HT801's dial tone (Asterisk will provide it)
+      
+      # Audio Configuration
+      preferred_vocoder: "0"  # PCMU (G.711 μ-law)
+      silence_suppression: "0"  # Disabled
+      echo_cancellation: "1"  # Enabled
+      
+      # Call Configuration
+      disable_call_waiting: "0"
+      disable_call_waiting_tone: "0"
+      
+  tasks:
+    - name: Wait for HT801 to be accessible
+      ansible.builtin.wait_for:
+        host: "{{ ht801_ip }}"
+        port: 80
+        timeout: 30
+      tags: connectivity
+
+    - name: Check if HT801 web interface is accessible
+      ansible.builtin.uri:
+        url: "http://{{ ht801_ip }}"
+        method: GET
+        timeout: 10
+        status_code: [200, 401]
+      register: ht801_initial_check
+      failed_when: false
+      tags: connectivity
+
+    - name: Attempt to login with default credentials
+      ansible.builtin.uri:
+        url: "http://{{ ht801_ip }}/cgi-bin/api-sys_operation"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          action: "login"
+          username: "{{ ht801_default_user }}"
+          password: "{{ ht801_default_pass }}"
+        timeout: 10
+        status_code: [200, 302]
+      register: ht801_login
+      failed_when: false
+      tags: login
+
+    # - name: Attempt to login with configured credentials
+    #   ansible.builtin.uri:
+    #     url: "http://{{ ht801_ip }}/cgi-bin/api-sys_operation"
+    #     method: POST
+    #     body_format: form-urlencoded
+    #     body:
+    #       action: "login"
+    #       username: "{{ ht801_default_user }}"
+    #       password: "{{ ht801_new_password }}"
+    #     timeout: 10
+    #     status_code: [200, 302]
+    #   register: ht801_login
+    #   failed_when: false
+    #   tags: login
+
+    - name: Set login success status
+      ansible.builtin.set_fact:
+        ht801_logged_in: "{{ ht801_login }}"
+      tags: login
+
+    - name: Configure HT801 Network Settings
+      ansible.builtin.uri:
+        url: "http://{{ ht801_ip }}/cgi-bin/api-sys_operation"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          action: "set"
+          P8: "{{ ht801_config.dhcp }}"        # DHCP Enable/Disable
+          P9: "{{ ht801_config.ip }}"          # Static IP
+          P10: "{{ ht801_config.netmask }}"    # Subnet Mask
+          P11: "{{ ht801_config.gateway }}"    # Gateway
+          P12: "{{ ht801_config.dns1 }}"       # Primary DNS
+        timeout: 15
+        status_code: [200, 302]
+      register: ht801_network_config
+      when: ht801_logged_in
+      tags: network_config
+
+    - name: Configure HT801 SIP Settings for FXS Port 1
+      ansible.builtin.uri:
+        url: "http://{{ ht801_ip }}/cgi-bin/api-sys_operation"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          action: "set"
+          P47: "{{ ht801_config.sip_server }}"       # Primary SIP Server
+          P35: "{{ ht801_config.sip_user_id }}"      # SIP User ID
+          P36: "{{ ht801_config.sip_auth_id }}"      # SIP Auth ID
+          P34: "{{ ht801_config.sip_auth_password }}" # SIP Auth Password
+          P32: "{{ ht801_config.register_expiration }}" # Registration Expiration
+          P130: "{{ ht801_config.sip_transport }}"   # SIP Transport (UDP)
+        timeout: 15
+        status_code: [200, 302]
+      register: ht801_sip_config
+      when: ht801_logged_in
+      tags: sip_config
+
+    - name: Configure HT801 Audio Settings
+      ansible.builtin.uri:
+        url: "http://{{ ht801_ip }}/cgi-bin/api-sys_operation"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          action: "set"
+          P57: "{{ ht801_config.preferred_vocoder }}"    # Preferred Vocoder
+          P23: "{{ ht801_config.silence_suppression }}" # Silence Suppression
+          P191: "{{ ht801_config.echo_cancellation }}"  # Echo Cancellation
+        timeout: 15
+        status_code: [200, 302]
+      register: ht801_audio_config
+      when: ht801_logged_in
+      tags: audio_config
+
+    - name: Configure HT801 Hotline Settings for F001 Phone Pickup Detection
+      ansible.builtin.uri:
+        url: "http://{{ ht801_ip }}/cgi-bin/api-sys_operation"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          action: "set"
+          P71: "{{ ht801_config.offhook_auto_dial }}"  # Offhook Auto-Dial Number
+          P2348: "{{ ht801_config.auto_dial_delay }}"    # Auto-Dial Delay
+          P16: "{{ ht801_config.disable_dial_tone }}"    # Disable Local Dial Tone
+        timeout: 15
+        status_code: [200, 302]
+      register: ht801_hotline_config
+      when: ht801_logged_in
+      tags: hotline_config
+
+    - name: Change HT801 Admin Password
+      ansible.builtin.uri:
+        url: "http://{{ ht801_ip }}/cgi-bin/api-sys_operation"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          action: "set"
+          P2: "{{ ht801_new_password }}"  # Admin Password
+        timeout: 15
+        status_code: [200, 302]
+      register: ht801_password_change
+      when: ht801_logged_in and ht801_login_default is defined and ht801_login_default.status == 200
+      tags: security
+
+    - name: Apply Configuration and Reboot HT801
+      ansible.builtin.uri:
+        url: "http://{{ ht801_ip }}/cgi-bin/api-sys_operation"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          action: "reboot"
+        timeout: 15
+        status_code: [200, 302]
+      register: ht801_reboot
+      when: ht801_logged_in and (ht801_network_config.changed or ht801_sip_config.changed or ht801_hotline_config.changed)
+      tags: reboot
+
+    - name: Wait for HT801 to reboot and come back online
+      ansible.builtin.wait_for:
+        host: "{{ ht801_ip }}"
+        port: 80
+        timeout: 120
+        delay: 30
+      when: ht801_reboot is defined and ht801_reboot.changed
+      tags: reboot
+
+    - name: Verify HT801 configuration
+      ansible.builtin.uri:
+        url: "http://{{ ht801_ip }}/cgi-bin/api-get_value"
+        method: GET
+        timeout: 10
+        status_code: [200, 401]
+      register: ht801_final_check
+      failed_when: false
+      tags: verify
+
+    - name: Display HT801 Configuration Status
+      ansible.builtin.debug:
+        msg: |
+          
+          🎯 HT801 Auto-Configuration Results:
+          
+          {% if ht801_logged_in %}
+          ✅ Successfully logged into HT801 web interface
+          
+          Configuration Applied:
+          {% if ht801_network_config is defined and ht801_network_config.changed %}
+          ✅ Network settings configured ({{ ht801_ip }}/{{ pi_netmask }})
+          {% endif %}
+          {% if ht801_sip_config is defined and ht801_sip_config.changed %}
+          ✅ SIP settings configured (Server: {{ pi_static_ip }}, User: ht801-aor)
+          {% endif %}
+          {% if ht801_audio_config is defined and ht801_audio_config.changed %}
+          ✅ Audio settings optimized
+          {% endif %}
+          {% if ht801_password_change is defined and ht801_password_change.changed %}
+          ✅ Admin password changed to: {{ ht801_new_password }}
+          {% endif %}
+          {% if ht801_reboot is defined and ht801_reboot.changed %}
+          ✅ Device rebooted and online at {{ ht801_ip }}
+          {% endif %}
+          
+          Next Steps:
+          1. Test phone registration: sudo asterisk -rx "pjsip show endpoints"
+          2. Pick up handset to test call flow
+          3. Verify audio quality
+          {% else %}
+          ❌ Could not access HT801 web interface
+          
+          Manual Configuration Required:
+          1. Check physical connections (Ethernet cable, power)
+          2. Verify HT801 has booted completely (wait 2-3 minutes)
+          3. Use phone IVR: pick up handset, dial ***, then 02 for IP
+          4. SSH tunnel: ssh -L 8080:<current_ip>:80 drew@pi5phone
+          5. Web interface: http://localhost:8080 (login: admin/admin or admin/Phone2Pi)
+          {% endif %}
+      tags: verify
+
+    - name: Create HT801 configuration summary
+      ansible.builtin.copy:
+        content: |
+          HT801 Configuration Summary
+          ==========================
+          Date: {{ ansible_date_time.iso8601 }}
+          
+          Network Configuration:
+          - IP Address: {{ ht801_ip }}
+          - Subnet Mask: {{ pi_netmask }}
+          - Gateway: {{ pi_static_ip }}
+          - DNS: {{ pi_static_ip }}
+          
+          SIP Configuration:
+          - SIP Server: {{ pi_static_ip }}
+          - SIP User ID: ht801-aor
+          - Auth ID: ht801-aor
+          - Transport: UDP
+          - Registration: 60 seconds
+          
+          Audio Configuration:
+          - Codec: G.711 μ-law (PCMU)
+          - Echo Cancellation: Enabled
+          - Silence Suppression: Disabled
+          
+          Security:
+          - Admin Username: admin
+          - Admin Password: {{ ht801_new_password }}
+          
+          Web Interface: http://{{ ht801_ip }}
+          
+          {% if ht801_logged_in %}
+          Status: ✅ AUTO-CONFIGURED
+          {% else %}
+          Status: ❌ REQUIRES MANUAL SETUP
+          {% endif %}
+        dest: "{{ project_home }}/ht801-config-summary.txt"
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        mode: '0644'
+      tags: documentation
