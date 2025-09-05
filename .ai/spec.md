@@ -20,7 +20,7 @@ A memorial gallery installation featuring an interactive retro telephone system 
 1. **Phone Interface**
    - HTMengt 2500 Analog Desk Phone
    - Red telephone line cord for visual authenticity
-   - RJ11 connection to ATA gateway
+   - RJ11 connection to ATA gateway (Grandstream HT801 v2 1 FXS)
 
 2. **Communication Gateway**
    - Grandstream HT801 ATA (Analog Telephone Adapter)
