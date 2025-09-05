@@ -57,15 +57,7 @@ The IVR menu for setting a static IP can be unreliable. A better method is to di
     *   Dial `***` (three stars) to access the IVR menu.
     *   Dial `02` to have the current IP address announced. It will likely be something like `192.168.0.160`.
 
-2.  **Temporarily Change the Pi's IP Address**:
-    *   Modify your `ht801-link` connection on the Pi to be on the same subnet as the HT801. Replace `192.168.0.160` if the announced IP was different.
-    ```bash
-    sudo nmcli connection modify 'ht801-link' ipv4.addresses 192.168.0.10/24
-    sudo nmcli connection up 'ht801-link'
-    ```
-    *   Verify the change: `ip addr show eth0`. You should now see an IP in the `192.168.0.x` range.
-
-3.  **Access the HT801 Web GUI via SSH Port Forwarding**:
+2.  **Access the HT801 Web GUI via SSH Port Forwarding**:
     *   Since the Pi is headless, you'll use your PC to access the HT801's web interface through an SSH tunnel.
     *   **On your PC**, open a new terminal (do not disconnect your existing SSH session to the Pi).
     *   Run the following command to forward a local port on your PC to the HT801's web server, through the Pi. Replace `192.168.0.160` if the announced IP was different.
@@ -76,7 +68,7 @@ The IVR menu for setting a static IP can be unreliable. A better method is to di
     *   Log in with the administrator password (default is `AvSbdMF9`).
     *   Set Password to: `Phone2Pi`
 
-4.  **Set the Correct Static IP in the Web GUI**:
+3.  **Set the Correct Static IP in the Web GUI**:
     *   Navigate to the **BASIC SETTINGS** tab.
     *   Change the IP Address from `DHCP` to **`Static IP`**.
     *   Set the following:
@@ -85,14 +77,7 @@ The IVR menu for setting a static IP can be unreliable. A better method is to di
         *   **Gateway**: `192.168.50.10`
     *   Click **Apply** and reboot the HT801 when prompted.
 
-5.  **Revert the Pi's IP Address**:
-    *   Now that the HT801 is on the correct `192.168.50.x` network, change the Pi's connection back.
-    ```bash
-    sudo nmcli connection modify 'ht801-link' ipv4.addresses 192.168.50.10/24
-    sudo nmcli connection up 'ht801-link'
-    ```
-
-6.  **Verify Final Connectivity**:
+4.  **Verify Final Connectivity**:
     *   From the Pi, you should now be able to ping the HT801 at its new, permanent address:
     ```bash
     ssh -L 8080:192.168.50.20:80 drew@pi5phone

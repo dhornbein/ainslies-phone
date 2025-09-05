@@ -1,38 +1,64 @@
 ---
 - name: Update Ainslie Phone deployment
   hosts: all
+  become: true
+  vars_files:
+    - ../group_vars/all.yml
+  handlers:
+    - import_tasks: ../handlers/main.yml
   
   tasks:
-    - name: Sync project files from local git
-      ansible.posix.synchronize:
-        src: "{{ playbook_dir }}/../../"
+    - name: Deploy project files to Pi
+      ansible.builtin.copy:
+        src: "../../"
         dest: "{{ deploy_path }}/"
-        delete: true
-        rsync_opts:
-          - "--exclude=.git"
-          - "--exclude=.ai"
-          - "--exclude=ansible"
-          - "--exclude=*.log"
-          - "--exclude=__pycache__"
-          - "--exclude=.DS_Store"
-        owner: false
-        group: false
-      become: true
-      become_user: "{{ project_user }}"
-      
-    - name: Set correct permissions on deployed files
-      ansible.builtin.file:
-        path: "{{ deploy_path }}"
         owner: "{{ project_user }}"
         group: "{{ project_user }}"
-        recurse: true
-      become: true
-      
-    - name: Restart Asterisk service
+        mode: '0644'
+        remote_src: no
+      tags: deploy
+
+    - name: Deploy pjsip.conf configuration
+      ansible.builtin.template:
+        src: "../templates/pjsip.conf.j2"
+        dest: "/etc/asterisk/pjsip.conf"
+        owner: root
+        group: root
+        mode: '0644'
+        backup: yes
+      notify: Reload Asterisk PJSIP
+      tags: asterisk_config
+
+    - name: Deploy extensions.conf configuration  
+      ansible.builtin.template:
+        src: "../templates/extensions.conf.j2"
+        dest: "/etc/asterisk/extensions.conf"
+        owner: root
+        group: root
+        mode: '0644'
+        backup: yes
+      notify: Reload Asterisk Dialplan
+      tags: asterisk_config
+
+    - name: Verify Asterisk service is running
       ansible.builtin.systemd:
         name: asterisk
-        state: restarted
-      become: true
+        state: started
+        enabled: yes
+      tags: asterisk_service
+
+    - name: Check Asterisk SIP endpoint status
+      ansible.builtin.command: asterisk -rx "pjsip show endpoints"
+      register: sip_status
+      changed_when: false
+      failed_when: false
+      tags: asterisk_verify
+
+    - name: Display SIP endpoint status
+      ansible.builtin.debug:
+        msg: "SIP Endpoints: {{ sip_status.stdout_lines }}"
+      when: sip_status.rc == 0
+      tags: asterisk_verify
       
     - name: Deployment complete
       ansible.builtin.debug:

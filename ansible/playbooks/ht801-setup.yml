@@ -1,0 +1,139 @@
+---
+- name: Setup Raspberry Pi Network for HT801
+  ansible.builtin.import_playbook: network-setup.yml
+
+- name: Complete HT801 and Asterisk Configuration
+  hosts: all
+  become: true
+  vars_files:
+    - ../group_vars/all.yml
+  handlers:
+    - import_tasks: ../handlers/main.yml
+
+  tasks:
+    - name: Check if HT801 web interface is reachable
+      ansible.builtin.uri:
+        url: "http://{{ ht801_ip }}"
+        method: GET
+        timeout: 5
+        status_code: [200, 401, 403]  # Any of these indicates the device is responding
+      register: ht801_web_check
+      failed_when: false
+      changed_when: false
+      tags: connectivity
+
+    - name: Check HT801 port 80 accessibility (fallback test)
+      ansible.builtin.wait_for:
+        host: "{{ ht801_ip }}"
+        port: 80
+        timeout: 5
+      register: ht801_port_check
+      failed_when: false
+      changed_when: false
+      when: ht801_web_check.status is not defined
+      tags: connectivity
+
+    - name: Display HT801 connectivity status
+      ansible.builtin.debug:
+        msg: |
+          HT801 connectivity status:
+          {% if ht801_web_check.status is defined and ht801_web_check.status in [200, 401, 403] %}
+          ✅ HT801 web interface is reachable at {{ ht801_ip }}
+          {% elif ht801_port_check is defined and ht801_port_check.failed == false %}
+          ✅ HT801 port 80 is accessible at {{ ht801_ip }} (web interface may require authentication)
+          {% else %}
+          ❌ HT801 is NOT reachable at {{ ht801_ip }}
+          Manual configuration may be required:
+          1. Pick up phone handset
+          2. Dial *** to access IVR menu
+          3. Dial 02 to hear current IP
+          4. Use SSH tunnel: ssh -L 8080:<current_ip>:80 drew@pi5phone
+          5. Configure static IP via web interface at http://localhost:8080
+          {% endif %}
+      tags: connectivity
+
+    - name: Backup existing Asterisk configurations
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ item }}.backup.{{ ansible_date_time.epoch }}"
+        remote_src: yes
+      loop:
+        - /etc/asterisk/pjsip.conf
+        - /etc/asterisk/extensions.conf
+      failed_when: false
+      tags: backup
+
+    - name: Deploy pjsip.conf configuration
+      ansible.builtin.template:
+        src: "../templates/pjsip.conf.j2"
+        dest: "/etc/asterisk/pjsip.conf"
+        owner: root
+        group: root
+        mode: '0644'
+        backup: yes
+      notify: Reload Asterisk PJSIP
+      tags: asterisk_config
+
+    - name: Deploy extensions.conf configuration  
+      ansible.builtin.template:
+        src: "../templates/extensions.conf.j2"
+        dest: "/etc/asterisk/extensions.conf"
+        owner: root
+        group: root
+        mode: '0644'
+        backup: yes
+      notify: Reload Asterisk Dialplan
+      tags: asterisk_config
+
+    - name: Ensure Asterisk service is running
+      ansible.builtin.systemd:
+        name: asterisk
+        state: started
+        enabled: yes
+      tags: service
+
+    - name: Force handlers to run now
+      meta: flush_handlers
+      tags: asterisk_config
+
+    - name: Wait for Asterisk to fully load
+      ansible.builtin.wait_for:
+        timeout: 10
+      tags: service
+
+    - name: Check Asterisk SIP endpoint status
+      ansible.builtin.command: asterisk -rx "pjsip show endpoints"
+      register: sip_endpoints
+      changed_when: false
+      failed_when: false
+      tags: verify
+
+    - name: Check Asterisk transport status
+      ansible.builtin.command: asterisk -rx "pjsip show transports"
+      register: sip_transports
+      changed_when: false
+      failed_when: false
+      tags: verify
+
+    - name: Display Asterisk status
+      ansible.builtin.debug:
+        msg: |
+          
+          🎯 HT801 Setup Status:
+          
+          Network Configuration:
+          - Pi IP: {{ pi_static_ip }}
+          - HT801 IP: {{ ht801_ip }}
+          - Connection: {% if (ht801_web_check.status is defined and ht801_web_check.status in [200, 401, 403]) or (ht801_port_check is defined and ht801_port_check.failed == false) %}✅ Active{% else %}❌ Failed{% endif %}
+          
+          SIP Transports:
+          {{ sip_transports.stdout if sip_transports.rc == 0 else 'Failed to query transports' }}
+          
+          SIP Endpoints:
+          {{ sip_endpoints.stdout if sip_endpoints.rc == 0 else 'Failed to query endpoints' }}
+          
+          Next Steps:
+          1. If HT801 is not reachable, configure it manually via web interface
+          2. Test phone by picking up handset - should hear dial tone and hello-world message
+          3. Check endpoint status with: sudo asterisk -rx "pjsip show endpoints"
+      tags: verify

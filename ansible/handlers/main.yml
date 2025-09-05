@@ -1,0 +1,40 @@
+---
+# Ansible handlers for Ainslie Phone project
+
+- name: Reload Asterisk
+  ansible.builtin.command: asterisk -rx "core reload"
+  become: true
+
+- name: Reload Asterisk Dialplan
+  ansible.builtin.command: asterisk -rx "dialplan reload"
+  become: true
+
+- name: Reload Asterisk PJSIP
+  ansible.builtin.command: asterisk -rx "module reload res_pjsip.so"
+  become: true
+
+- name: Restart Asterisk
+  ansible.builtin.systemd:
+    name: asterisk
+    state: restarted
+  become: true
+
+- name: Restart NetworkManager
+  ansible.builtin.systemd:
+    name: NetworkManager
+    state: restarted
+  become: true
+
+- name: Reboot system
+  ansible.builtin.reboot:
+    reboot_timeout: 300
+    pre_reboot_delay: 10
+    post_reboot_delay: 30
+  become: true
+
+- name: Wait for system to come back online
+  ansible.builtin.wait_for_connection:
+    connect_timeout: 20
+    sleep: 5
+    delay: 5
+    timeout: 300

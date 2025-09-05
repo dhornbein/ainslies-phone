@@ -1,0 +1,48 @@
+---
+- name: Configure Raspberry Pi Network for HT801
+  hosts: all
+  become: true
+  vars_files:
+    - ../group_vars/all.yml
+  handlers:
+    - import_tasks: ../handlers/main.yml
+  
+  tasks:
+    - name: Install NetworkManager tools
+      ansible.builtin.apt:
+        name: network-manager
+        state: present
+
+    - name: Check if ht801-link connection already exists
+      ansible.builtin.command: nmcli connection show 'ht801-link'
+      register: connection_check
+      failed_when: false
+      changed_when: false
+
+    - name: Remove existing ht801-link connection if it exists
+      ansible.builtin.command: nmcli connection delete 'ht801-link'
+      when: connection_check.rc == 0
+
+    - name: Create static ethernet connection for HT801
+      ansible.builtin.command: >
+        nmcli con add type ethernet con-name 'ht801-link' 
+        ifname eth0 ip4 {{ pi_static_ip }}/24
+      register: connection_created
+      
+    - name: Set ht801-link to never be the default route
+      ansible.builtin.command: nmcli connection modify 'ht801-link' ipv4.never-default yes
+      when: connection_created is succeeded
+
+    - name: Activate the ht801-link connection
+      ansible.builtin.command: nmcli connection up 'ht801-link'
+      when: connection_created is succeeded
+      notify: Wait for system to come back online
+
+    - name: Verify IP address is set
+      ansible.builtin.command: ip addr show eth0
+      register: ip_check
+      changed_when: false
+
+    - name: Display network configuration
+      ansible.builtin.debug:
+        msg: "Network configuration complete. eth0 status: {{ ip_check.stdout_lines }}"

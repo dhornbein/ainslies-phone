@@ -1,9 +1,14 @@
 ---
+- name: Setup Raspberry Pi Network
+  ansible.builtin.import_playbook: network-setup.yml
+
 - name: Provision Raspberry Pi for Ainslie Phone
   hosts: all
   become: true
   vars_files:
     - ../group_vars/all.yml
+  handlers:
+    - import_tasks: ../handlers/main.yml
   
   tasks:
     - name: Update apt cache
@@ -39,9 +44,27 @@
     - name: Deploy project files from local relative path
       tags: copy
       ansible.builtin.copy:
-        src: "../"
+        src: "../../"
         dest: "{{ deploy_path }}/"
         owner: "{{ project_user }}"
         group: "{{ project_user }}"
         mode: '0644'
         remote_src: no
+
+    - name: Ensure Asterisk service is enabled
+      tags: service
+      ansible.builtin.systemd:
+        name: asterisk
+        enabled: yes
+        state: started
+      failed_when: false  # May not be installed yet
+
+    - name: Provision complete
+      ansible.builtin.debug:
+        msg: |
+          ✅ Provisioning complete!
+          
+          Next steps:
+          1. Install Asterisk: ansible-playbook playbooks/install-asterisk.yml
+          2. Configure HT801: ansible-playbook playbooks/ht801-setup.yml
+          3. Deploy configs: ansible-playbook playbooks/update.yml
