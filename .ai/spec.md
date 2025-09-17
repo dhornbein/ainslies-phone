@@ -3,7 +3,22 @@
 ## Project Overview
 A memorial gallery installation featuring an interactive retro telephone system that plays recordings of a departed friend named Ainslie. Pick up the phone and experience her voice as if we were still connected through underground wires.
 
-**Current Status**: ✅ **Core Features Implemented** - DTMF interruption system working, audio playback with immediate keypress response, ready for content loading.
+**Current Status**: 
+- F001: Phone Pickup Detection ✅
+- F002: Keypad Navigation System ✅
+- F003: Audio Playback Engine ☑ (volume normalization not yet implemented)
+- F004: Recording Organization System ✅
+- F005: Hangup Detection & Cleanup ✅
+- F101: Help System ☑ (drafted, needs final voice/recording)
+- F102: Repeat Functionality ✅
+- F103: Random Selection ✅
+- F201: Offline Operation ✅
+- F202: Boot Sequence Management ✅
+- F203: Content Update System (NEXT)
+- F204: Static Network Configuration ☑ (static config works, but /etc/dhcpcd.conf not present)
+- F303: Memorial Ambiance ✅
+
+See features.md for detailed status and notes.
 
 ## Core Concept
 - **Primary Device**: HTMengt 2500 Analog Desk Phone
@@ -66,11 +81,11 @@ A memorial gallery installation featuring an interactive retro telephone system 
 3. **Welcome Prompt**: Automated help message explains navigation
 
 ### Navigation System
-- **Digits 1-9**: Play specific recordings assigned to each number
-- **Digit 0**: Replay help/instruction prompt
-- **Star (*)**: Repeat last played recording from beginning
-- **Hash (#)**: Random selection from all available recordings
-- **Hangup**: Immediately stop playback and return to idle state
+- **Digits 1-9**: Play specific recordings assigned to each number (working)
+- **Digit 0**: Replay help/instruction prompt (working, needs final voice/recording)
+- **Star (*)**: Repeat last played recording from beginning (working)
+- **Hash (#)**: Random selection from all available recordings (working)
+- **Hangup**: Immediately stop playback and return to idle state (working)
 
 ### Audio Organization
 ```
@@ -84,8 +99,10 @@ A memorial gallery installation featuring an interactive retro telephone system 
 │   └── recording.wav
 ├── ...
 └── 9/
-    └── recording.wav
+   └── recording.wav
 ```
+Directory structure are complete.
+Wav files are 8kHz mono WAV files.
 
 ## Technical Specifications
 
@@ -105,12 +122,12 @@ A memorial gallery installation featuring an interactive retro telephone system 
 - **Length**: Variable duration supported
 
 ### Call Flow Logic
-1. **Idle State**: Phone on-hook, system waiting
-2. **Off-hook Event**: Immediate dial tone generation
-3. **DTMF Detection**: Real-time keypress processing
-4. **Audio Playback**: Immediate response to digit presses
-5. **State Management**: Track current/last played recording for repeat function
-6. **Hangup Handling**: Clean termination and state reset
+1. **Idle State**: Phone on-hook, system waiting (working)
+2. **Off-hook Event**: Immediate dial tone generation (working)
+3. **DTMF Detection**: Real-time keypress processing (working)
+4. **Audio Playback**: Immediate response to digit presses (working, volume normalization not yet implemented)
+5. **State Management**: Track current/last played recording for repeat function (working)
+6. **Hangup Handling**: Clean termination and state reset (working)
 
 ## Operational Characteristics
 
@@ -158,10 +175,10 @@ A memorial gallery installation featuring an interactive retro telephone system 
 
 **Current System Status**:
 - Raspberry Pi 5: Provisioned and accessible
-- Asterisk Service: Active and validated  
+- Asterisk Service: Active and validated
 - CLI Access: `sudo asterisk -rvvv` working
 - Logs: Available at `/var/log/asterisk/messages`
-- Ready for: SIP configuration and dialplan implementation
+- SIP configuration and dialplan: Implemented and working
 
 ## Technical Constraints
 - **Single Handset**: One phone interface only

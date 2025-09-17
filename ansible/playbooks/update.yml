@@ -8,22 +8,21 @@
     - import_tasks: ../handlers/main.yml
   
   tasks:
-    - name: Deploy project files to Pi
-      ansible.builtin.copy:
-        src: "../../"
-        dest: "{{ deploy_path }}/"
-        owner: "{{ project_user }}"
-        group: "{{ project_user }}"
-        mode: '0644'
-        remote_src: no
-      tags: deploy
+    - name: Sync audio files to Pi
+      ansible.posix.synchronize:
+        src: ../../sounds/
+        dest: "{{ deploy_path }}/sounds"
+        delete: yes # This will delete files on the destination that don't exist locally
+        rsync_opts:
+          - "--chown={{ project_user }}:{{ project_user }}"
+      tags: deploy, audio
 
     - name: Deploy pjsip.conf configuration
       ansible.builtin.template:
         src: "../templates/pjsip.conf.j2"
         dest: "/etc/asterisk/pjsip.conf"
-        owner: root
-        group: root
+        owner: asterisk
+        group: asterisk
         mode: '0644'
         backup: yes
       notify: Reload Asterisk PJSIP
@@ -33,8 +32,8 @@
       ansible.builtin.template:
         src: "../templates/extensions.conf.j2"
         dest: "/etc/asterisk/extensions.conf"
-        owner: root
-        group: root
+        owner: asterisk
+        group: asterisk
         mode: '0644'
         backup: yes
       notify: Reload Asterisk Dialplan

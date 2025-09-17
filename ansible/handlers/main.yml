@@ -10,7 +10,7 @@
   become: true
 
 - name: Reload Asterisk PJSIP
-  ansible.builtin.command: asterisk -rx "module reload res_pjsip.so"
+  ansible.builtin.command: asterisk -rx "pjsip reload"
   become: true
 
 - name: Restart Asterisk

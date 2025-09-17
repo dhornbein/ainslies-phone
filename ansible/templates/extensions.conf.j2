@@ -10,7 +10,7 @@ writeprotect=no
 
 [globals]
 ; Global variables for session state management
-LAST_RECORDING=""
+LAST_RECORDING_FILE=""
 
 [from-phone]
 ; F001: Phone Pickup Detection - Main entry point when phone goes off-hook
@@ -20,56 +20,58 @@ LAST_RECORDING=""
 exten => 0,1,NoOp(=== F002: Help/Instruction Replay ===)
 same => n,Goto(help-prompt,1)
 
-; F002: DTMF Navigation - Recordings 1-9 (using built-in sounds for testing)
+; F002: DTMF Navigation - Recordings 1-9
 exten => 1,1,NoOp(=== F002: Playing Recording 1 ===)
-same => n,Set(LAST_RECORDING=1)
-same => n,Background(demo-abouttotry)
+same => n,Gosub(playback-handler,s,1(ainslie/1/recording))
+same => n,Background(ainslie/1/recording)
 same => n,Goto(wait-for-input,1)
 
 exten => 2,1,NoOp(=== F002: Playing Recording 2 ===)
-same => n,Set(LAST_RECORDING=2)
-same => n,Background(demo-congrats)
+same => n,Gosub(playback-handler,s,1(ainslie/2/recording))
+same => n,Background(ainslie/2/recording)
 same => n,Goto(wait-for-input,1)
 
 exten => 3,1,NoOp(=== F002: Playing Recording 3 ===)
-same => n,Set(LAST_RECORDING=3)
-same => n,Background(demo-echotest)
+same => n,Gosub(playback-handler,s,1(ainslie/3/recording))
+same => n,Background(ainslie/3/recording)
 same => n,Goto(wait-for-input,1)
 
 exten => 4,1,NoOp(=== F002: Playing Recording 4 ===)
-same => n,Set(LAST_RECORDING=4)
-same => n,Background(demo-instruct)
+same => n,Gosub(playback-handler,s,1(ainslie/4/recording))
+same => n,Background(ainslie/4/recording)
 same => n,Goto(wait-for-input,1)
 
 exten => 5,1,NoOp(=== F002: Playing Recording 5 ===)
-same => n,Set(LAST_RECORDING=5)
-same => n,Background(demo-moreinfo)
+same => n,Gosub(playback-handler,s,1(ainslie/5/recording))
+same => n,Background(ainslie/5/recording)
 same => n,Goto(wait-for-input,1)
 
 exten => 6,1,NoOp(=== F002: Playing Recording 6 ===)
-same => n,Set(LAST_RECORDING=6)
-same => n,Background(demo-thanks)
+same => n,Gosub(playback-handler,s,1(ainslie/6/recording))
+same => n,Background(ainslie/6/recording)
 same => n,Goto(wait-for-input,1)
 
 exten => 7,1,NoOp(=== F002: Playing Recording 7 ===)
-same => n,Set(LAST_RECORDING=7)
-same => n,Background(hello-world)
+same => n,Gosub(playback-handler,s,1(ainslie/7/recording))
+same => n,Background(ainslie/7/recording)
 same => n,Goto(wait-for-input,1)
 
 exten => 8,1,NoOp(=== F002: Playing Recording 8 ===)
-same => n,Set(LAST_RECORDING=8)
-same => n,Background(vm-goodbye)
+same => n,Gosub(playback-handler,s,1(ainslie/8/recording))
+same => n,Background(ainslie/8/recording)
 same => n,Goto(wait-for-input,1)
 
 exten => 9,1,NoOp(=== F002: Playing Recording 9 ===)
-same => n,Set(LAST_RECORDING=9)
-same => n,Background(beep)
+same => n,Gosub(playback-handler,s,1(ainslie/9/recording))
+same => n,Background(ainslie/9/recording)
 same => n,Goto(wait-for-input,1)
 
 ; F002: Star (*) - Repeat last played recording (F102)
 exten => *,1,NoOp(=== F002: Repeat Last Recording ===)
-same => n,GotoIf($["${LAST_RECORDING}" = ""]?help-prompt,1)
-same => n,Goto(${LAST_RECORDING},1)
+same => n,GotoIf($["${LAST_RECORDING_FILE}" = ""]?help-prompt,1)
+same => n,Gosub(playback-handler,s,1(${LAST_RECORDING_FILE}))
+same => n,Background(${LAST_RECORDING_FILE})
+same => n,Goto(wait-for-input,1)
 
 ; F002: Hash (#) - Random recording selection (F103)
 exten => #,1,NoOp(=== F002: Random Recording Selection ===)
@@ -79,9 +81,7 @@ same => n,Goto(${RANDOM_NUM},1)
 
 ; Help prompt extension (F101)
 exten => help-prompt,1,NoOp(=== F101: Help System ===)
-same => n,Background(beep)
-same => n,Background(beep)
-same => n,Background(beep)
+same => n,Background(ainslie/0/recording)
 same => n,Goto(wait-for-input,1)
 
 ; Wait for input state - listens for DTMF with immediate response (F104)
@@ -91,10 +91,17 @@ same => n,Goto(help-prompt,1)  ; If no input, replay help
 
 ; F005: Hangup detection and cleanup
 exten => h,1,NoOp(=== F005: Hangup Detected - Cleaning Up ===)
-same => n,Set(LAST_RECORDING="")  ; Clear session state
+same => n,Set(LAST_RECORDING_FILE="")  ; Clear session state
 same => n,NoOp(Session terminated cleanly)
 
 ; Fallback for any unhandled extensions
 exten => _X,1,NoOp(=== Unhandled DTMF: ${EXTEN} ===)
 same => n,Playback(invalid)
 same => n,Goto(help-prompt,1)
+
+[playback-handler]
+; Handler only sets LAST_RECORDING_FILE, no playback
+; Expects ARG1 to be the base file path (without extension)
+exten => s,1,NoOp(=== Playback Handler: Setting LAST_RECORDING_FILE to ${ARG1} ===)
+same => n,Set(LAST_RECORDING_FILE=${ARG1})
+same => n,Return()

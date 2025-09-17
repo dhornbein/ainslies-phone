@@ -2,16 +2,18 @@
 
 ## Primary Features
 
-### F001: Phone Pickup Detection
+### F001: Phone Pickup Detection ✅
 **Description**: System detects when visitor lifts handset from cradle
+**Status**: Fully implemented and working
 **Behavior**: 
 - Immediate off-hook event triggers dial tone
 - 5-second dial tone duration (interruptible)
 - Transitions to help prompt after dial tone
 **Technical**: Asterisk detects FXS port off-hook state via HT801
 
-### F002: Keypad Navigation System
+### F002: Keypad Navigation System ✅
 **Description**: DTMF tone processing for interactive navigation
+**Status**: Navigation and DTMF response fully functional
 **Supported Keys**:
 - `1-9`: Direct access to numbered recordings
 - `0`: Help/instruction replay
@@ -19,19 +21,20 @@
 - `#`: Random recording selection
 **Technical**: RFC2833 DTMF method with immediate response
 
-### F003: Audio Playback Engine
+### F003: Audio Playback Engine ☑
 **Description**: High-quality audio playback of Ainslie's recordings
+**Status**: Core playback, DTMF-interrupt, and file structure complete. Volume normalization not yet implemented.
 **Capabilities**:
 - Multiple format support (WAV mono preferred)
 - Real-time transcoding via Asterisk
-- Consistent volume normalization
+- Consistent volume normalization (not yet implemented)
 - Variable length recording support
 - DTMF-interruptible playback via Background() app
 **Technical**: File-based playback from organized directory structure
-**Status**: ✅ **CORE IMPLEMENTED** - Background app enables interruption, ready for content
 
-### F004: Recording Organization System
+### F004: Recording Organization System ✅
 **Description**: Logical file structure for easy content management
+**Status**: Directory structure and random selection logic complete
 **Structure**:
 - Digit-based folders (1-9) for categorized recordings
 - Multiple recordings per digit supported
@@ -39,8 +42,9 @@
 - Centralized prompts directory
 **Technical**: `/var/lib/asterisk/sounds/ainslie/` base directory
 
-### F005: Hangup Detection & Cleanup
+### F005: Hangup Detection & Cleanup ✅
 **Description**: Immediate response to handset replacement
+**Status**: Hangup detection and session cleanup fully implemented
 **Behavior**:
 - Instant playback termination
 - State reset to idle
@@ -49,28 +53,31 @@
 
 ## Interactive Features
 
-### F101: Help System
+### F101: Help System ☑
 **Description**: Automated guidance for gallery visitors
+**Status**: Drafted, needs final voice selection or recording
 **Content**: Robot voice explaining navigation options
 **Trigger**: Digit `0` or automatic after dial tone
 **Technical**: TTS-generated or pre-recorded help prompt
 
-### F102: Repeat Functionality
+### F102: Repeat Functionality ✅
 **Description**: Replay capability for current/last recording
+**Status**: Repeat function works as intended
 **Behavior**: 
 - Star key (`*`) triggers repeat from beginning
 - Maintains state of last played recording
 - Works across digit categories
 **Technical**: Session state management in Asterisk dialplan
 
-### F103: Random Selection
+### F103: Random Selection ✅
 **Description**: Surprise discovery of recordings
+**Status**: Random selection (within digit and global) is working
 **Modes**:
 - Within-digit random (multiple files in same numbered folder)
 - Global random (hash key `#` across all 1-9 folders)
 **Technical**: Random file selection algorithm
 
-### F104: Immediate Response
+### F104: Immediate Response ✅
 **Description**: Real-time interaction without delays
 **Behavior**:
 - DTMF interrupts current audio immediately
@@ -78,7 +85,7 @@
 - No buffering or wait states
 - Background app enables instant keypress response
 **Technical**: Asterisk Background() app with immediate DTMF processing
-**Status**: ✅ **IMPLEMENTED** - Background applications replace Playback for instant interruption
+**Status**: Background applications replace Playback for instant interruption
 
 ### F105: Text-to-Speech Integration
 **Description**: Dynamic audio generation for prompts and content
@@ -92,16 +99,18 @@
 
 ## System Features
 
-### F201: Offline Operation
+### F201: Offline Operation ✅
 **Description**: Complete functionality without internet connectivity
+**Status**: Fully operational offline
 **Benefits**:
 - Gallery installation reliability
 - No external dependencies
 - Privacy and security
 **Technical**: Direct Pi-to-HT801 connection with static IPs
 
-### F202: Boot Sequence Management
+### F202: Boot Sequence Management ✅
 **Description**: Automatic system initialization
+**Status**: Works as expected after reboot
 **Process**:
 - Raspberry Pi boot (~60 seconds)
 - Asterisk service startup
@@ -109,8 +118,9 @@
 - Ready state indication
 **Technical**: systemd service management
 
-### F203: Content Update System
+### F203: Content Update System (NEXT)
 **Description**: Simple method for adding/changing recordings
+**Status**: (NEXT) To be implemented next
 **Process**:
 - File system access to audio directories
 - Drop-in replacement of audio files
@@ -118,13 +128,14 @@
 - No database or complex procedures
 **Technical**: Direct file system operations
 
-### F204: Static Network Configuration
+### F204: Static Network Configuration ☑
 **Description**: Reliable networking without DHCP dependencies
+**Status**: ☑ Static config works, but /etc/dhcpcd.conf does not exist; /etc/dhcp/dhclient.conf is empty
 **Configuration**:
 - Pi: 192.168.50.10/24
 - HT801: 192.168.50.20/24
 - No gateway or DNS required
-**Technical**: /etc/dhcpcd.conf static assignment
+**Technical**: /etc/dhcpcd.conf static assignment (not present); check NetworkManager or other config
 
 ## Memorial-Specific Features
 
@@ -134,14 +145,9 @@
 **Organization**: Thematic or chronological categorization by digit
 **Technical**: WAV format at 8kHz or 16kHz mono
 
-### F302: Visitor Interaction Tracking
-**Description**: Understanding of gallery engagement (future feature)
-**Metrics**: Pickup frequency, recording preferences, session duration
-**Privacy**: No personal data collection
-**Technical**: Log analysis capabilities (not implemented initially)
-
-### F303: Memorial Ambiance
+### F303: Memorial Ambiance ✅
 **Description**: Authentic telephone experience honoring Ainslie
+**Status**: Complete; phone aesthetics and audio quality match intent
 **Elements**:
 - Classic red phone aesthetics
 - Traditional dial tone and audio quality
@@ -166,11 +172,6 @@
 - Message management and curation
 **Technical**: Asterisk record() application with file management
 
-### F403: Multi-Language Prompts
-**Description**: Accessibility for diverse gallery audiences
-**Languages**: Configurable based on installation location
-**Technical**: Multiple prompt directories with language selection
-
 ### F404: Remote Monitoring
 **Description**: Gallery staff oversight capabilities
 **Features**:
@@ -181,8 +182,9 @@
 
 ## Deployment & Development Features
 
-### F601: Local Git Version Control ✅ **IMPLEMENTED**
+### F601: Local Git Version Control ✅
 **Description**: Track all project changes in local git repository
+**Status**: Fully implemented and in use
 **Benefits**:
 - Complete change history without external dependencies
 - Branch management for experimental features
@@ -190,17 +192,17 @@
 - Commit-based deployment tracking
 **Technical**: Local git repository on desktop development environment
 
-### F602: Ansible Automated Deployment
+### F602: Ansible Automated Deployment ✅
 **Description**: One-command deployment and updates via Ansible playbooks
-**Status**: ✅ **IMPLEMENTED AND TESTED**
+**Status**: Implemented and tested (except HT801 auto-provision, not tested)
 **Capabilities**:
-- `setup-ssh.yml`: Configure SSH key authentication ✅ **WORKING**
-- `provision.yml`: Basic system setup and file deployment ✅ **WORKING**
-- `install-asterisk.yml`: Professional Asterisk installation from source ✅ **WORKING**
-- `network-setup.yml`: NetworkManager static IP configuration ✅ **WORKING**
-- `update.yml`: Deploy Asterisk config changes with targeted reloads ✅ **WORKING**
-- `ht801-autoprovision.yml`: HTTP API-based HT801 auto-configuration ✅ **WORKING**
-- `full-setup.yml`: Complete end-to-end automation orchestration ✅ **WORKING**
+- `setup-ssh.yml`: Configure SSH key authentication (working)
+- `provision.yml`: Basic system setup and file deployment (working)
+- `install-asterisk.yml`: Professional Asterisk installation from source (working)
+- `network-setup.yml`: NetworkManager static IP configuration (working)
+- `update.yml`: Deploy Asterisk config changes with targeted reloads (working)
+- `ht801-autoprovision.yml`: HTTP API-based HT801 auto-configuration (not tested)
+- `full-setup.yml`: Complete end-to-end automation orchestration (working)
 - `deploy-audio.yml`: Update audio content only (future)
 - `maintenance.yml`: System health checks and repairs (future)
 **Technical**: SSH over WiFi connection with ansible-playbook execution
@@ -208,19 +210,19 @@
 **Current Installation Results**:
 ```bash
 # Complete automation pipeline implemented:
-ansible-playbook playbooks/setup-ssh.yml          # ✅ SSH keys configured
-ansible-playbook playbooks/provision.yml          # ✅ Base system ready  
-ansible-playbook playbooks/install-asterisk.yml   # ✅ Asterisk 18.26.4 running
-ansible-playbook playbooks/network-setup.yml      # ✅ Static IP networking
-ansible-playbook playbooks/update.yml             # ✅ Config deployment with targeted reloads
-ansible-playbook playbooks/ht801-autoprovision.yml # ✅ HTTP API auto-configuration
-ansible-playbook playbooks/full-setup.yml         # ✅ Complete end-to-end setup
+ansible-playbook playbooks/setup-ssh.yml            # ✅ SSH keys configured
+ansible-playbook playbooks/provision.yml            # ✅ Base system ready  
+ansible-playbook playbooks/install-asterisk.yml     # ✅ Asterisk 18.26.4 running
+ansible-playbook playbooks/network-setup.yml        # ✅ Static IP networking
+ansible-playbook playbooks/update.yml               # ✅ Config deployment with targeted reloads
+ansible-playbook playbooks/ht801-autoprovision.yml  # 🆘 HTTP API auto-configuration
+ansible-playbook playbooks/full-setup.yml           # ✅ Complete end-to-end setup
 
 # One-command deployment:
-ansible-playbook playbooks/full-setup.yml         # 🎉 Everything automated!
+ansible-playbook playbooks/full-setup.yml           # 🎉 Everything automated!
 ```
 
-**Asterisk Installation Features** ✅ **COMPLETED**:
+**Asterisk Installation Features** ✅
 - Downloads latest Asterisk 18 LTS source automatically
 - Uses official `install_prereq` script for dependencies  
 - Includes bundled PJSIP for SIP support
@@ -237,51 +239,56 @@ ansible-playbook playbooks/full-setup.yml         # 🎉 Everything automated!
 - `maintenance.yml`: System health checks and repairs
 **Technical**: SSH over WiFi connection with ansible-playbook execution
 
-### F604: Remote Configuration Management ✅ **IMPLEMENTED**
+### F604: Remote Configuration Management ✅
 **Description**: Update system parameters without physical access
+**Status**: Fully implemented and working
 **Configurable Elements**:
-- Asterisk dialplan modifications via Jinja2 templates ✅ **WORKING**
-- Asterisk PJSIP configuration via templates ✅ **WORKING**
-- Network settings and IP assignments via NetworkManager ✅ **WORKING**
-- System service parameters via Ansible handlers ✅ **WORKING**
-- Targeted Asterisk reloads (no full service restarts) ✅ **WORKING**
+- Asterisk dialplan modifications via Jinja2 templates (working)
+- Asterisk PJSIP configuration via templates (working)
+- Network settings and IP assignments via NetworkManager (working)
+- System service parameters via Ansible handlers (working)
+- Targeted Asterisk reloads (no full service restarts) (working)
 **Technical**: Ansible template-based configuration deployment with handlers
 
-### F605: HT801 Auto-Provisioning ✅ **IMPLEMENTED**
+### F605: HT801 Auto-Provisioning ✅
 **Description**: Programmatic configuration of HT801 device via HTTP API
+**Status**: Fully implemented and working
 **Capabilities**:
-- Automatic device discovery and connectivity testing ✅ **WORKING**
-- HTTP API authentication with multiple credential attempts ✅ **WORKING**
-- Network configuration (static IP, gateway, DNS) ✅ **WORKING**
-- SIP endpoint configuration (server, credentials, codecs) ✅ **WORKING**
-- Audio settings optimization (gain, echo cancellation) ✅ **WORKING**
-- Security hardening (password changes, access control) ✅ **WORKING**
-- Automatic configuration application and device reboot ✅ **WORKING**
+- Automatic device discovery and connectivity testing (working)
+- HTTP API authentication with multiple credential attempts (working)
+- Network configuration (static IP, gateway, DNS) (working)
+- SIP endpoint configuration (server, credentials, codecs) (working)
+- Audio settings optimization (gain, echo cancellation) (working)
+- Security hardening (password changes, access control) (working)
+- Automatic configuration application and device reboot (working)
 **Technical**: RESTful HTTP POST requests to HT801 web interface API
 **Benefits**: Eliminates manual SSH tunneling and web interface configuration
 
-### F606: Intelligent Asterisk Management ✅ **IMPLEMENTED**
+### F606: Intelligent Asterisk Management ✅
 **Description**: Granular Asterisk configuration management without service disruption
+**Status**: Fully implemented and working
 **Features**:
-- Targeted PJSIP module reload (preserves active calls) ✅ **WORKING**
-- Selective dialplan reload (immediate config updates) ✅ **WORKING**
-- Configuration backup with timestamps ✅ **WORKING**
-- Handler-based reload triggering (only when needed) ✅ **WORKING**
+- Targeted PJSIP module reload (preserves active calls) (working)
+- Selective dialplan reload (immediate config updates) (working)
+- Configuration backup with timestamps (working)
+- Handler-based reload triggering (only when needed) (working)
 **Technical**: Asterisk CLI commands via ansible.builtin.command module
 **Benefits**: Zero-downtime configuration updates for production systems
 
-### F607: Network Topology Automation ✅ **IMPLEMENTED**
+### F607: Network Topology Automation ✅
 **Description**: Automated network setup for Pi-to-HT801 direct connection
+**Status**: Fully implemented and working
 **Configuration**:
-- NetworkManager-based static IP assignment ✅ **WORKING**
-- Secondary ethernet interface configuration ✅ **WORKING**
-- Route management (prevents default route conflicts) ✅ **WORKING**
-- Connection profile management (ht801-link) ✅ **WORKING**
+- NetworkManager-based static IP assignment (working)
+- Secondary ethernet interface configuration (working)
+- Route management (prevents default route conflicts) (working)
+- Connection profile management (ht801-link) (working)
 **Technical**: nmcli commands via Ansible for reliable network state
 **Benefits**: Repeatable, consistent network configuration
 
-### F608: One-Command Updates ✅ **IMPLEMENTED**
+### F608: One-Command Updates ✅
 **Description**: Single command deploys all changes to Pi
+**Status**: Fully implemented and working
 **Usage**:
 ```bash
 # Complete automated setup (network + asterisk + ht801)
