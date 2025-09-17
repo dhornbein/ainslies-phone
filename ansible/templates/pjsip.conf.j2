@@ -14,8 +14,14 @@ type=endpoint
 context=from-phone
 disallow=all
 allow=ulaw
+allow=alaw
+; F002: Enable RFC2833 DTMF for immediate response
+dtmf_mode=rfc2833
 direct_media=no
 aors=ht801-aor
+; Enable inbound calls to trigger 's' extension
+send_pai=yes
+trust_id_inbound=yes
 
 [ht801-aor]
 type=aor

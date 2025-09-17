@@ -8,18 +8,93 @@
 static=yes
 writeprotect=no
 
+[globals]
+; Global variables for session state management
+LAST_RECORDING=""
+
 [from-phone]
-; Test dialplan - answers calls and plays hello-world message
-exten => _XXX,1,Answer()
-same => n,Wait(1)
-same => n,Playback(hello-world)
-same => n,Hangup()
+; F001: Phone Pickup Detection - Main entry point when phone goes off-hook
+; This extension matches the 's' extension when HT801 auto-dials on pickup
 
-; Specific test extensions
-exten => 100,1,Answer()
-same => n,Playback(hello-world)
-same => n,Hangup()
+; F002: DTMF Navigation - Help System (F101)
+exten => 0,1,NoOp(=== F002: Help/Instruction Replay ===)
+same => n,Goto(help-prompt,1)
 
-exten => 999,1,Answer()
-same => n,Playback(demo-congrats)
-same => n,Hangup()
+; F002: DTMF Navigation - Recordings 1-9 (using built-in sounds for testing)
+exten => 1,1,NoOp(=== F002: Playing Recording 1 ===)
+same => n,Set(LAST_RECORDING=1)
+same => n,Background(demo-abouttotry)
+same => n,Goto(wait-for-input,1)
+
+exten => 2,1,NoOp(=== F002: Playing Recording 2 ===)
+same => n,Set(LAST_RECORDING=2)
+same => n,Background(demo-congrats)
+same => n,Goto(wait-for-input,1)
+
+exten => 3,1,NoOp(=== F002: Playing Recording 3 ===)
+same => n,Set(LAST_RECORDING=3)
+same => n,Background(demo-echotest)
+same => n,Goto(wait-for-input,1)
+
+exten => 4,1,NoOp(=== F002: Playing Recording 4 ===)
+same => n,Set(LAST_RECORDING=4)
+same => n,Background(demo-instruct)
+same => n,Goto(wait-for-input,1)
+
+exten => 5,1,NoOp(=== F002: Playing Recording 5 ===)
+same => n,Set(LAST_RECORDING=5)
+same => n,Background(demo-moreinfo)
+same => n,Goto(wait-for-input,1)
+
+exten => 6,1,NoOp(=== F002: Playing Recording 6 ===)
+same => n,Set(LAST_RECORDING=6)
+same => n,Background(demo-thanks)
+same => n,Goto(wait-for-input,1)
+
+exten => 7,1,NoOp(=== F002: Playing Recording 7 ===)
+same => n,Set(LAST_RECORDING=7)
+same => n,Background(hello-world)
+same => n,Goto(wait-for-input,1)
+
+exten => 8,1,NoOp(=== F002: Playing Recording 8 ===)
+same => n,Set(LAST_RECORDING=8)
+same => n,Background(vm-goodbye)
+same => n,Goto(wait-for-input,1)
+
+exten => 9,1,NoOp(=== F002: Playing Recording 9 ===)
+same => n,Set(LAST_RECORDING=9)
+same => n,Background(beep)
+same => n,Goto(wait-for-input,1)
+
+; F002: Star (*) - Repeat last played recording (F102)
+exten => *,1,NoOp(=== F002: Repeat Last Recording ===)
+same => n,GotoIf($["${LAST_RECORDING}" = ""]?help-prompt,1)
+same => n,Goto(${LAST_RECORDING},1)
+
+; F002: Hash (#) - Random recording selection (F103)
+exten => #,1,NoOp(=== F002: Random Recording Selection ===)
+same => n,Set(RANDOM_NUM=$[${RAND(1,9)}])
+same => n,NoOp(Selected random recording: ${RANDOM_NUM})
+same => n,Goto(${RANDOM_NUM},1)
+
+; Help prompt extension (F101)
+exten => help-prompt,1,NoOp(=== F101: Help System ===)
+same => n,Background(beep)
+same => n,Background(beep)
+same => n,Background(beep)
+same => n,Goto(wait-for-input,1)
+
+; Wait for input state - listens for DTMF with immediate response (F104)
+exten => wait-for-input,1,NoOp(=== F104: Waiting for DTMF Input ===)
+same => n,WaitExten(30)  ; Wait up to 30 seconds for DTMF input
+same => n,Goto(help-prompt,1)  ; If no input, replay help
+
+; F005: Hangup detection and cleanup
+exten => h,1,NoOp(=== F005: Hangup Detected - Cleaning Up ===)
+same => n,Set(LAST_RECORDING="")  ; Clear session state
+same => n,NoOp(Session terminated cleanly)
+
+; Fallback for any unhandled extensions
+exten => _X,1,NoOp(=== Unhandled DTMF: ${EXTEN} ===)
+same => n,Playback(invalid)
+same => n,Goto(help-prompt,1)

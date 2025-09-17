@@ -3,7 +3,7 @@
 ## Project Overview
 A memorial gallery installation featuring an interactive retro telephone system that plays recordings of a departed friend named Ainslie. Pick up the phone and experience her voice as if we were still connected through underground wires.
 
-**Current Status**: ✅ **Infrastructure Phase Complete** - Raspberry Pi provisioned, Asterisk PBX installed and running, ready for phone gallery implementation.
+**Current Status**: ✅ **Core Features Implemented** - DTMF interruption system working, audio playback with immediate keypress response, ready for content loading.
 
 ## Core Concept
 - **Primary Device**: HTMengt 2500 Analog Desk Phone
@@ -53,7 +53,10 @@ A memorial gallery installation featuring an interactive retro telephone system 
 - ✅ Sample configurations installed at `/etc/asterisk/`
 - ✅ Audio directory structure ready at `/var/lib/asterisk/sounds/`
 - ✅ Ansible deployment pipeline tested and working
-- 🔄 Ready for SIP/HT801 configuration and dialplan implementation
+- ✅ DTMF interruption system implemented with Background app
+- ✅ Responsive keypad navigation with immediate audio stopping
+- 🔄 Text-to-Speech integration (Festival) planned but not deployed
+- 🔄 Ready for SIP/HT801 configuration and final audio content
 
 ## User Experience Flow
 

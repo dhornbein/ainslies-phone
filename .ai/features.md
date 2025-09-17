@@ -26,7 +26,9 @@
 - Real-time transcoding via Asterisk
 - Consistent volume normalization
 - Variable length recording support
+- DTMF-interruptible playback via Background() app
 **Technical**: File-based playback from organized directory structure
+**Status**: ✅ **CORE IMPLEMENTED** - Background app enables interruption, ready for content
 
 ### F004: Recording Organization System
 **Description**: Logical file structure for easy content management
@@ -71,10 +73,22 @@
 ### F104: Immediate Response
 **Description**: Real-time interaction without delays
 **Behavior**:
-- DTMF interrupts current audio
-- New selection starts immediately
+- DTMF interrupts current audio immediately
+- New selection starts immediately  
 - No buffering or wait states
-**Technical**: Asterisk immediate DTMF processing
+- Background app enables instant keypress response
+**Technical**: Asterisk Background() app with immediate DTMF processing
+**Status**: ✅ **IMPLEMENTED** - Background applications replace Playback for instant interruption
+
+### F105: Text-to-Speech Integration
+**Description**: Dynamic audio generation for prompts and content
+**Capabilities**:
+- Festival TTS engine integration
+- Real-time voice synthesis for help prompts
+- Potential for dynamic content generation
+- Consistent robotic voice for system messages
+**Technical**: Festival daemon with Asterisk Festival() application
+**Status**: 🔄 **PLANNED** - Framework designed, installation not deployed
 
 ## System Features
 

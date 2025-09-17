@@ -87,6 +87,11 @@ Deploy your code to the Pi:
 ansible-playbook playbooks/update.yml
 ```
 
+**Recent Updates:**
+- ✅ DTMF interruption system deployed (Background apps)
+- ✅ Responsive keypad navigation implemented
+- 🔄 TTS integration planned for future deployment
+
 ## Deployment Workflow
 
 ### Day-to-Day Development
