@@ -23,14 +23,14 @@
 
 ### F003: Audio Playback Engine ☑
 **Description**: High-quality audio playback of Ainslie's recordings
-**Status**: Core playback, DTMF-interrupt, and file structure complete. Volume normalization not yet implemented.
+**Status**: Core playback, DTMF-interrupt, and file structure complete. Volume normalization implemented via ffmpeg loudnorm.
 **Capabilities**:
 - Multiple format support (WAV mono preferred)
 - Real-time transcoding via Asterisk
-- Consistent volume normalization (not yet implemented)
+- Consistent volume normalization (ffmpeg loudnorm)
 - Variable length recording support
 - DTMF-interruptible playback via Background() app
-**Technical**: File-based playback from organized directory structure
+**Technical**: File-based playback from organized directory structure, with normalization during conversion
 
 ### F004: Recording Organization System ✅
 **Description**: Logical file structure for easy content management
@@ -118,15 +118,17 @@
 - Ready state indication
 **Technical**: systemd service management
 
-### F203: Content Update System (NEXT)
+### F203: Content Update System ✅
 **Description**: Simple method for adding/changing recordings
-**Status**: (NEXT) To be implemented next
+**Status**: Implemented
 **Process**:
-- File system access to audio directories
-- Drop-in replacement of audio files
-- Asterisk restart for recognition
-- No database or complex procedures
-**Technical**: Direct file system operations
+- Place new audio files in `source-audio/` with names like `1_desc.m4a`, `2_desc.mp3`, etc.
+- Run the Ansible `update.yml` playbook to convert, normalize, and deploy audio
+- Audio is normalized to -18 LUFS, 8kHz mono WAV for Asterisk compatibility
+- Files are automatically renamed and placed in the correct subfolders for dialplan access
+- No Asterisk restart required for new audio
+- DTMF response is immediate for single-digit extensions (snappy interaction)
+**Technical**: ffmpeg conversion with loudnorm, Ansible automation, direct file system operations
 
 ### F204: Static Network Configuration ☑
 **Description**: Reliable networking without DHCP dependencies

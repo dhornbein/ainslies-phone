@@ -1,3 +1,24 @@
+# Audio Content Update Workflow (F203)
+
+The system supports simple, automated updates of all phone audio content:
+
+1. **Add or replace audio files** in `source-audio/` using the format `<digit>_<desc>.<ext>` (e.g., `1_birthday.m4a`, `2_meditation.mp3`).
+2. **Run the update playbook:**
+  ```bash
+  ansible-playbook playbooks/update.yml --tags audio
+  ```
+  This will:
+  - Convert and normalize all audio to 8kHz mono WAV using ffmpeg with loudnorm (target -18 LUFS)
+  - Place each file in the correct subfolder as `recording.wav` for Asterisk
+  - Sync files to `/var/lib/asterisk/sounds/ainslie/` with correct permissions
+  - No Asterisk restart is required for new audio
+3. **Dial a single digit (1-9) on the phone** to play the corresponding recording. DTMF response is immediate and snappy.
+
+**Technical details:**
+- Normalization: ffmpeg `loudnorm=I=-18:TP=-1:LRA=11` for consistent volume
+- File structure is managed automatically by Ansible
+- Only single-digit extensions are active for instant response
+
 # HT801 Setup Automation
 
 This directory contains Ansible automation for the complete HT801 and Asterisk setup process described in the HT801-Setup-Guide.md.

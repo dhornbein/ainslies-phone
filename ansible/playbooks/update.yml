@@ -8,13 +8,40 @@
     - import_tasks: ../handlers/main.yml
   
   tasks:
-    - name: Sync audio files to Pi
+
+    - name: Run local audio conversion (idempotent)
+      delegate_to: localhost
+      become: false
+      args:
+        chdir: "{{ playbook_dir }}/../../source-audio"
+      ansible.builtin.shell: |
+        bash ./convert_audio.sh
+      tags: [deploy, audio]
+
+    - name: Move and rename normalized wav files matching NNN_*.wav into NNN/recording.wav
+      delegate_to: localhost
+      become: false
+      ansible.builtin.shell: |
+        set -e
+        cd "{{ playbook_dir }}/../../sounds"
+        for f in *.wav; do
+          ext=${f%%_*}
+          if [[ $ext =~ ^[0-9]{1,3}$ ]]; then
+            mkdir -p "$ext"
+            mv -f "$f" "$ext/recording.wav"
+          fi
+        done
+      args:
+        executable: /bin/bash
+      tags: [deploy, audio]
+
+    - name: Sync audio files to Asterisk sounds directory
       ansible.posix.synchronize:
         src: ../../sounds/
-        dest: "{{ deploy_path }}/sounds"
+        dest: /var/lib/asterisk/sounds/ainslie/
         delete: yes # This will delete files on the destination that don't exist locally
         rsync_opts:
-          - "--chown={{ project_user }}:{{ project_user }}"
+          - "--chown=asterisk:asterisk"
       tags: deploy, audio
 
     - name: Deploy pjsip.conf configuration

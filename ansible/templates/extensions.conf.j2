@@ -18,57 +18,32 @@ LAST_RECORDING_FILE=""
 
 ; F002: DTMF Navigation - Help System (F101)
 exten => 0,1,NoOp(=== F002: Help/Instruction Replay ===)
+same => n,Playtones(congestion)
+same => n,Wait(2)
 same => n,Goto(help-prompt,1)
 
-; F002: DTMF Navigation - Recordings 1-9
-exten => 1,1,NoOp(=== F002: Playing Recording 1 ===)
-same => n,Gosub(playback-handler,s,1(ainslie/1/recording))
-same => n,Background(ainslie/1/recording)
-same => n,Goto(wait-for-input,1)
 
-exten => 2,1,NoOp(=== F002: Playing Recording 2 ===)
-same => n,Gosub(playback-handler,s,1(ainslie/2/recording))
-same => n,Background(ainslie/2/recording)
-same => n,Goto(wait-for-input,1)
+; F203: Pattern-matched DTMF Navigation - Any 1-3 digit extension (0-999)
+; Matches extensions 0-9, 00-99, 000-999
+; Plays ainslie/<extension>/recording.wav if present
+; See https://docs.asterisk.org/Configuration/Dialplan/Pattern-Matching/
+exten => _X,1,NoOp(=== F203: Playing Recording for 1-digit EXTEN ${EXTEN} ===)
+ same => n,Gosub(playback-handler,s,1(ainslie/${EXTEN}/recording))
+ same => n,Background(ainslie/${EXTEN}/recording)
+ same => n,Goto(wait-for-input,1)
 
-exten => 3,1,NoOp(=== F002: Playing Recording 3 ===)
-same => n,Gosub(playback-handler,s,1(ainslie/3/recording))
-same => n,Background(ainslie/3/recording)
-same => n,Goto(wait-for-input,1)
+; exten => _XX,1,NoOp(=== F203: Playing Recording for 2-digit EXTEN ${EXTEN} ===)
+;  same => n,Gosub(playback-handler,s,1(ainslie/${EXTEN}/recording))
+;  same => n,Background(ainslie/${EXTEN}/recording)
+;  same => n,Goto(wait-for-input,1)
 
-exten => 4,1,NoOp(=== F002: Playing Recording 4 ===)
-same => n,Gosub(playback-handler,s,1(ainslie/4/recording))
-same => n,Background(ainslie/4/recording)
-same => n,Goto(wait-for-input,1)
-
-exten => 5,1,NoOp(=== F002: Playing Recording 5 ===)
-same => n,Gosub(playback-handler,s,1(ainslie/5/recording))
-same => n,Background(ainslie/5/recording)
-same => n,Goto(wait-for-input,1)
-
-exten => 6,1,NoOp(=== F002: Playing Recording 6 ===)
-same => n,Gosub(playback-handler,s,1(ainslie/6/recording))
-same => n,Background(ainslie/6/recording)
-same => n,Goto(wait-for-input,1)
-
-exten => 7,1,NoOp(=== F002: Playing Recording 7 ===)
-same => n,Gosub(playback-handler,s,1(ainslie/7/recording))
-same => n,Background(ainslie/7/recording)
-same => n,Goto(wait-for-input,1)
-
-exten => 8,1,NoOp(=== F002: Playing Recording 8 ===)
-same => n,Gosub(playback-handler,s,1(ainslie/8/recording))
-same => n,Background(ainslie/8/recording)
-same => n,Goto(wait-for-input,1)
-
-exten => 9,1,NoOp(=== F002: Playing Recording 9 ===)
-same => n,Gosub(playback-handler,s,1(ainslie/9/recording))
-same => n,Background(ainslie/9/recording)
-same => n,Goto(wait-for-input,1)
+; exten => _XXX,1,NoOp(=== F203: Playing Recording for 3-digit EXTEN ${EXTEN} ===)
+;  same => n,Gosub(playback-handler,s,1(ainslie/${EXTEN}/recording))
+;  same => n,Background(ainslie/${EXTEN}/recording)
+;  same => n,Goto(wait-for-input,1)
 
 ; F002: Star (*) - Repeat last played recording (F102)
 exten => *,1,NoOp(=== F002: Repeat Last Recording ===)
-same => n,GotoIf($["${LAST_RECORDING_FILE}" = ""]?help-prompt,1)
 same => n,Gosub(playback-handler,s,1(${LAST_RECORDING_FILE}))
 same => n,Background(${LAST_RECORDING_FILE})
 same => n,Goto(wait-for-input,1)
@@ -81,23 +56,19 @@ same => n,Goto(${RANDOM_NUM},1)
 
 ; Help prompt extension (F101)
 exten => help-prompt,1,NoOp(=== F101: Help System ===)
+same => n,Gosub(playback-handler,s,1(ainslie/0/recording))
 same => n,Background(ainslie/0/recording)
 same => n,Goto(wait-for-input,1)
 
 ; Wait for input state - listens for DTMF with immediate response (F104)
 exten => wait-for-input,1,NoOp(=== F104: Waiting for DTMF Input ===)
-same => n,WaitExten(30)  ; Wait up to 30 seconds for DTMF input
+same => n,WaitExten(5)  ; Wait up to 5 seconds for DTMF input
 same => n,Goto(help-prompt,1)  ; If no input, replay help
 
 ; F005: Hangup detection and cleanup
 exten => h,1,NoOp(=== F005: Hangup Detected - Cleaning Up ===)
 same => n,Set(LAST_RECORDING_FILE="")  ; Clear session state
 same => n,NoOp(Session terminated cleanly)
-
-; Fallback for any unhandled extensions
-exten => _X,1,NoOp(=== Unhandled DTMF: ${EXTEN} ===)
-same => n,Playback(invalid)
-same => n,Goto(help-prompt,1)
 
 [playback-handler]
 ; Handler only sets LAST_RECORDING_FILE, no playback
