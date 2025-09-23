@@ -1,4 +1,4 @@
- # Ainslie Phone Features
+# Ainslie Phone Features
 
 ## Primary Features
 
@@ -69,13 +69,10 @@
 - Works across digit categories
 **Technical**: Session state management in Asterisk dialplan
 
-### F103: Random Selection ✅
-**Description**: Surprise discovery of recordings
-**Status**: Random selection (within digit and global) is working
-**Modes**:
-- Within-digit random (multiple files in same numbered folder)
-- Global random (hash key `#` across all 1-9 folders)
-**Technical**: Random file selection algorithm
+### F103: Random Selection ❌ (Removed)
+**Description**: Random selection of recordings
+**Status**: Removed by design
+**Note**: No random picker in any context (global or within-digit)
 
 ### F104: Immediate Response ✅
 **Description**: Real-time interaction without delays
@@ -96,6 +93,21 @@
 - Consistent robotic voice for system messages
 **Technical**: Festival daemon with Asterisk Festival() application
 **Status**: 🔄 **PLANNED** - Framework designed, installation not deployed
+
+### F108: Delete Confirmation
+**Description**: Prevent accidental deletion
+**Behavior**:
+- After recording is saved, `9` prompts: "Press 9 again to confirm deletion..."
+- Second `9` confirms and deletes; any other key cancels
+**Scope**: Available only in the “post-recording” menu for a newly created message
+
+### F106: Timeout Policy
+**Description**: Inactivity handling
+**Behavior**: If no input for 15 seconds, replay the current context help automatically
+
+### F107: Minimum Recording Length
+**Description**: Avoid empty clips
+**Behavior**: Discard recordings shorter than 5 seconds and reprompt to record
 
 ## System Features
 
@@ -126,6 +138,7 @@
 - Run the Ansible `update.yml` playbook to convert, normalize, and deploy audio
 - Audio is normalized to -18 LUFS, 8kHz mono WAV for Asterisk compatibility
 - Files are automatically renamed and placed in the correct subfolders for dialplan access
+- Conversion skips files if the output already exists and is newer than the source file
 - No Asterisk restart required for new audio
 - DTMF response is immediate for single-digit extensions (snappy interaction)
 **Technical**: ffmpeg conversion with loudnorm, Ansible automation, direct file system operations
@@ -166,8 +179,9 @@
 - Easily enabled/disabled
 **Technical**: Asterisk automatic call generation to phone
 
-### F402: Message Recording
+### F402: Message Recording ☑
 **Description**: Allow visitors to leave messages about Ainslie
+**Status**: Implemented, not tested
 **Functionality**:
 - Record after specific key sequence
 - Playback capability for other visitors
@@ -331,3 +345,15 @@ ansible-playbook playbooks/full-setup.yml --tags verify
 - Timing configurations
 - Network settings
 **Technical**: Asterisk configuration files and Linux system config
+
+### F109: Enhanced Dialplan Features ✅
+**Description**: Updates to the dialplan for improved functionality and user experience.
+**Status**: Fully implemented and working
+**Enhancements**:
+- Added support for repeating the last played recording in both main menu and voice memo contexts.
+- Improved voice memo handling with options for replaying, re-recording, and deleting recordings.
+- Enhanced help prompts for both main menu and voice memo contexts.
+- Added safeguards for minimum recording length and deletion confirmation.
+**Technical**:
+- Dialplan updates in `extensions.conf.j2` to include new contexts and logic.
+- Use of Asterisk applications like `Background()`, `Record()`, and `System()` for advanced functionality.

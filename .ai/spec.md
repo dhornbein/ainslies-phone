@@ -11,7 +11,7 @@ A memorial gallery installation featuring an interactive retro telephone system 
 - F005: Hangup Detection & Cleanup ✅
 - F101: Help System ☑ (drafted, needs final voice/recording)
 - F102: Repeat Functionality ✅
-- F103: Random Selection ✅
+- F103: Random Selection ❌ (Removed by design)
 - F201: Offline Operation ✅
 - F202: Boot Sequence Management ✅
 - F203: Content Update System (NEXT)
@@ -75,17 +75,46 @@ See features.md for detailed status and notes.
 
 ## User Experience Flow
 
-### Initial Interaction
-1. **Pickup Detection**: Phone goes off-hook
-2. **Dial Tone**: 5-second dial tone plays (interruptible by keypress)
-3. **Welcome Prompt**: Automated help message explains navigation
+### Navigation System on Pickup
+- **help message (main menu)**: "Welcome to the Ainslie Oneil memorial phone. Press 1-9 to hear a recording of Ainslie. Press star to repeat the last recording, pound to listen to or record a voice memo, and zero to hear this message again. Hang up to end the call."
+  - Timeout: If no input for 15 seconds, this help message is replayed.
+- **Press 1-9**: Plays specific recording assigned to that number
+- **Press 0**: Repeats help message (main menu)
+- **Press (*)**: Repeats the last played message in this context (main menu)
+- **Press (#)**: Enters voice memo mode
 
-### Navigation System
-- **Digits 1-9**: Play specific recordings assigned to each number (working)
-- **Digit 0**: Replay help/instruction prompt (working, needs final voice/recording)
-- **Star (*)**: Repeat last played recording from beginning (working)
-- **Hash (#)**: Random selection from all available recordings (working)
-- **Hangup**: Immediately stop playback and return to idle state (working)
+- Voice Memo Mode
+  - **help message (recording menu)**: "You are now in voice memo mode. Enter a three digit number to listen to a recording, or if there is no recording at that number, you will be prompted to record a message. Press star to repeat the last message, press pound to return to the main menu, or hang up to end the call. Press zero to hear this message again."
+    - Timeout: If no input for 15 seconds, this help message is replayed.
+  - **Press 0**: Repeats recording menu message (voice memo help)
+  - **Press (*)**: Repeats the last played message in this context (voice memos)
+  - **Press (#)**: Returns to main menu
+  - **Press 000-999**: Plays recording at that number, or prompts to record if none exists
+    - **If a recording exists**:
+      - Play recording
+      - **post recording message**: "You have listened to the message at [number]. Press star to listen to it again, press zero for help, press pound to return to the main menu, or press three numbers to go to another recording."
+        - **Press 0**: Replays the voice memo help
+        - **Press (*)**: Repeats the just-played message
+        - **Press (#)**: Returns to main menu
+        - **Enter 000-999**: Go to that recording code
+    - **If no recording exists**: "No recording found at [number]. To record a message, press 1. Press zero to hear this message again. Press pound to return to the main menu. To end the call, hang up."
+      - **Press 1**: "You may now record your message after the beep. Press pound when finished or hang up."
+        - Recording in progress: User records message (max 20 minutes; recordings shorter than 5 seconds are discarded and you will be prompted to try again)
+        - **Press (#)**: Ends recording
+        - **After recording (only if >= 5 seconds)**: "Your message has been saved at [number]. Press star to listen to it, press 1 to re-record, press 9 to delete, press pound to return to the main menu, or hang up to end the call."
+          - **Press (*)**: Plays the newly recorded message
+          - **Press 1**: Re-record message (overwrites the just-recorded message at this number within the same session)
+          - **Press 9**: "Press 9 again to confirm deletion of the message at [number], or press any other key to cancel."
+            - **Press 9 (again)**: "Your message at [number] has been deleted." (return to voice memo help)
+            - **Any other key**: "Deletion cancelled." (return to post-recording options)
+          - **Press (#)**: Returns to main menu
+          - **Press 0**: Repeats the recording menu help
+- **Overwrite policy**: If a recording already exists at a code, visitors cannot create a new message at that code. They may only listen. Recording is only offered when a slot is empty.
+
+### Recording Management
+- **Storage capacity**: ~0.5 MB/minute at 8kHz mono WAV. 20-minute maximum per message.
+- **Minimum length**: Recordings under 5 seconds are discarded and reprompted.
+- **File finalization**: Files are saved when recording stops via # or hangup. Hangup preserves the current recording.
 
 ### Audio Organization
 ```
@@ -99,10 +128,37 @@ See features.md for detailed status and notes.
 │   └── recording.wav
 ├── ...
 └── 9/
-   └── recording.wav
+│  └── recording.wav
+└── recordings/
+│   └── 000.wav
+│   └── 001.wav
+│   └── ...
+│   └── 999.wav
+└── prompts/
+    └── help_prompt.wav
 ```
 Directory structure are complete.
 Wav files are 8kHz mono WAV files.
+
+### Help prompt Script
+
+- `help_main_menu.wav`: Welcome to the Ainslie Oneil memorial phone. Press 1 through 9 to hear a recording of Ainslie. Press star to repeat the last recording. Press pound to listen to or record a voice memo. Press zero to hear this message again. Hang up to end the call.
+
+- `help_voice_memo_menu.wav`: You are in voice memo mode. Enter a three-digit number to listen to a recording. If no recording exists, you can record a message. Press star to repeat the last message, pound to return to the main menu, zero for help, or hang up to end the call.
+
+- `post_recording_message.wav`: That was the recording at number. 
+- `no_recording_found.wav`: No recording found at number. 
+- `recording_prompt.wav`: You may now record your message after the beep. Press pound when finished or hang up.
+- `recording_saved.wav`: Your message has been saved at number. 
+- `recording_too_short.wav`: Your recording was too short. Please try again and speak for at least 5 seconds.
+- `delete_confirmation.wav`: Press 9 again to confirm deletion of the message at number. 
+- `deletion_success.wav`: Your message has been deleted from number. 
+- `deletion_cancelled.wav`: Deletion cancelled.
+
+- `voice_memo_options.wav`: Press star to repeat the message. Press zero for help. Press pound to return to the main menu. Or enter three numbers to go to another recording.
+- `no_recording_options.wav`: To record a message, press 1. Press zero for help. Press pound to return to the main menu. Or hang up to end the call.
+- `recording_saved_options.wav`: Press star to listen to it. Press 1 to re-record. Press 9 to delete. Press zero for help. Press pound to return to the main menu. Or hang up to end the call.
+- `delete_confirmation_options.wav`: Press any other key to cancel.
 
 ## Technical Specifications
 
@@ -186,3 +242,13 @@ Wav files are 8kHz mono WAV files.
 - **Direct Connection**: Pi and HT801 communicate directly via Ethernet
 - **File-Based**: No database requirements
 - **Local Development**: Git repository and deployment tools on desktop only
+
+## Installation
+
+- ensure pi connects to gallery wifi
+- ensure asterisk is installed and configured
+- ensure audio files are in place
+- ensure proper permissions on files and directories
+- connect phone and power on
+- verify operation by picking up the handset
+- tissues and trashcan next to phone

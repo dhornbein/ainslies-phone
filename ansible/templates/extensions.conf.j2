@@ -10,65 +10,210 @@ writeprotect=no
 
 [globals]
 ; Global variables for session state management
-LAST_RECORDING_FILE=""
+; LAST_RECORDING_FILE should be empty when no recording has been played.
+; Avoid using literal quotes here (Asterisk would set the value to the two characters: "").
+LAST_RECORDING_FILE=
 
 [from-phone]
 ; F001: Phone Pickup Detection - Main entry point when phone goes off-hook
-; This extension matches the 's' extension when HT801 auto-dials on pickup
-
-; F002: DTMF Navigation - Help System (F101)
-exten => 0,1,NoOp(=== F002: Help/Instruction Replay ===)
-same => n,Playtones(congestion)
+; Set in the HT801 FXS PORT > Call Settings > Off-hook Auto Dial (set to 0)
+exten => 0,1,NoOp(=== F001: Phone Pickup Detection ===)
+same => n,Playtones(dial)
 same => n,Wait(2)
-same => n,Goto(help-prompt,1)
+same => n,StopPlaytones()
+same => n,Goto(main-menu,s,1)
 
-
-; F203: Pattern-matched DTMF Navigation - Any 1-3 digit extension (0-999)
-; Matches extensions 0-9, 00-99, 000-999
-; Plays ainslie/<extension>/recording.wav if present
-; See https://docs.asterisk.org/Configuration/Dialplan/Pattern-Matching/
-exten => _X,1,NoOp(=== F203: Playing Recording for 1-digit EXTEN ${EXTEN} ===)
- same => n,Gosub(playback-handler,s,1(ainslie/${EXTEN}/recording))
- same => n,Background(ainslie/${EXTEN}/recording)
- same => n,Goto(wait-for-input,1)
-
-; exten => _XX,1,NoOp(=== F203: Playing Recording for 2-digit EXTEN ${EXTEN} ===)
-;  same => n,Gosub(playback-handler,s,1(ainslie/${EXTEN}/recording))
-;  same => n,Background(ainslie/${EXTEN}/recording)
-;  same => n,Goto(wait-for-input,1)
-
-; exten => _XXX,1,NoOp(=== F203: Playing Recording for 3-digit EXTEN ${EXTEN} ===)
-;  same => n,Gosub(playback-handler,s,1(ainslie/${EXTEN}/recording))
-;  same => n,Background(ainslie/${EXTEN}/recording)
-;  same => n,Goto(wait-for-input,1)
-
-; F002: Star (*) - Repeat last played recording (F102)
-exten => *,1,NoOp(=== F002: Repeat Last Recording ===)
-same => n,Gosub(playback-handler,s,1(${LAST_RECORDING_FILE}))
-same => n,Background(${LAST_RECORDING_FILE})
-same => n,Goto(wait-for-input,1)
-
-; F002: Hash (#) - Random recording selection (F103)
-exten => #,1,NoOp(=== F002: Random Recording Selection ===)
-same => n,Set(RANDOM_NUM=$[${RAND(1,9)}])
-same => n,NoOp(Selected random recording: ${RANDOM_NUM})
-same => n,Goto(${RANDOM_NUM},1)
-
-; Help prompt extension (F101)
-exten => help-prompt,1,NoOp(=== F101: Help System ===)
-same => n,Gosub(playback-handler,s,1(ainslie/0/recording))
-same => n,Background(ainslie/0/recording)
-same => n,Goto(wait-for-input,1)
-
-; Wait for input state - listens for DTMF with immediate response (F104)
-exten => wait-for-input,1,NoOp(=== F104: Waiting for DTMF Input ===)
-same => n,WaitExten(5)  ; Wait up to 5 seconds for DTMF input
-same => n,Goto(help-prompt,1)  ; If no input, replay help
+; Capture any single digit and send to main menu
+exten => _X,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+same => n,Goto(main-menu,s,1)
 
 ; F005: Hangup detection and cleanup
 exten => h,1,NoOp(=== F005: Hangup Detected - Cleaning Up ===)
-same => n,Set(LAST_RECORDING_FILE="")  ; Clear session state
+same => n,Set(LAST_RECORDING_FILE=)
 same => n,NoOp(Session terminated cleanly)
+
+; Main Menu Context
+[main-menu]
+exten => s,1,NoOp(=== Main Menu Help ===)
+same => n,Background(ainslie/prompts/help_main_menu)
+same => n,WaitExten(15)
+same => n,Goto(s,1)
+
+; Digits 1-9: Play Ainslie's recordings
+exten => _[1-9],1,NoOp(=== Playing Ainslie Recording ${EXTEN} ===)
+same => n,Gosub(playback-handler,s,1(ainslie/${EXTEN}/recording))
+same => n,Background(ainslie/${EXTEN}/recording)
+same => n,WaitExten(1)
+same => n,Goto(main-menu,s,1)
+
+; Star (*) - Repeat last played recording
+exten => *,1,NoOp(=== Repeat Last Recording ===)
+same => n,GotoIf($["${LAST_RECORDING_FILE}" = ""]?main-menu,s,1)
+same => n,Background(${LAST_RECORDING_FILE})
+same => n,WaitExten(1)
+same => n,Goto(main-menu,s,1)
+
+; Hash (#) - Enter voice memo mode
+exten => #,1,NoOp(=== Enter Voice Memo Mode ===)
+same => n,Goto(voice-memo,s,1)
+
+; Zero (0) - Replay help
+exten => 0,1,NoOp(=== Main Menu Help ===)
+same => n,Goto(main-menu,s,1)
+
+; Voice Memo Context
+[voice-memo]
+exten => s,1,NoOp(=== Voice Memo Help ===)
+same => n,Background(ainslie/prompts/help_voice_memo_menu)
+same => n,WaitExten(15)
+same => n,Goto(s,1)
+
+; Handle 3-digit codes 000-999
+exten => _XXX,1,NoOp(=== Voice Memo Code: ${EXTEN} ===)
+same => n,Set(MEMO_CODE=${EXTEN})
+same => n,Set(RECORDING_FILE=ainslie/recordings/${MEMO_CODE})
+same => n,GotoIf($[${STAT(e,/var/lib/asterisk/sounds/${RECORDING_FILE}.wav)}]?play-memo,s,1)
+same => n,Goto(no-memo,s,1)
+
+; Star (*) - Repeat last recording in voice memo context
+exten => *,1,NoOp(=== Repeat Last Recording ===)
+same => n,GotoIf($["${LAST_RECORDING_FILE}" = ""]?voice-memo,s,1)
+same => n,Background(${LAST_RECORDING_FILE})
+same => n,WaitExten(1)
+same => n,Goto(voice-memo,s,1)
+
+; Hash (#) - Return to main menu
+exten => #,1,NoOp(=== Return to Main Menu ===)
+same => n,Goto(main-menu,s,1)
+
+; Zero (0) - Replay voice memo help
+exten => 0,1,NoOp(=== Voice Memo Help ===)
+same => n,Goto(voice-memo,s,1)
+
+; Play existing memo and show options
+[play-memo]
+exten => s,1,NoOp(=== Playing Recording ${RECORDING_FILE} ===)
+same => n,Gosub(playback-handler,s,1(${RECORDING_FILE}))
+same => n,Background(${RECORDING_FILE})
+same => n,Background(ainslie/prompts/post_recording_message)
+same => n,SayDigits(${MEMO_CODE})
+same => n,Background(ainslie/prompts/post_recording_options)
+same => n,WaitExten(1)
+same => n,Goto(voice-memo,s,1)
+
+; Star (*) - Repeat the just-played recording
+exten => *,1,NoOp(=== Repeat Recording ===)
+same => n,Background(${RECORDING_FILE})
+same => n,Goto(play-memo,s,1)
+
+; Hash (#) - Return to main menu
+exten => #,1,NoOp(=== Return to Main Menu ===)
+same => n,Goto(main-menu,s,1)
+
+; Zero (0) - Voice memo help
+exten => 0,1,NoOp(=== Voice Memo Help ===)
+same => n,Goto(voice-memo,s,1)
+
+; 000-999 - Go to another recording
+exten => _XXX,1,NoOp(=== Go to recording ${EXTEN} ===)
+same => n,Set(MEMO_CODE=${EXTEN})
+same => n,Set(RECORDING_FILE=ainslie/recordings/${MEMO_CODE})
+same => n,GotoIf($[${STAT(e,/var/lib/asterisk/sounds/${RECORDING_FILE}.wav)}]?play-memo,s,1)
+same => n,Goto(no-memo,s,1)
+
+; No recording found - offer to record
+[no-memo]
+exten => s,1,NoOp(=== No Recording Found for ${MEMO_CODE} ===)
+same => n,Background(ainslie/prompts/no_recording_found)
+same => n,SayDigits(${MEMO_CODE})
+same => n,Background(ainslie/prompts/no_recording_options)
+same => n,WaitExten(15)
+same => n,Goto(no-memo,s,1)
+
+; 1 - Start recording
+exten => 1,1,NoOp(=== Start Recording ===)
+same => n,Goto(record-memo,s,1)
+
+; Hash (#) - Return to main menu
+exten => #,1,NoOp(=== Return to Main Menu ===)
+same => n,Goto(main-menu,s,1)
+
+; Zero (0) - Repeat this message
+exten => 0,1,NoOp(=== Repeat No Recording Message ===)
+same => n,Goto(no-memo,s,1)
+
+; Recording workflow
+[record-memo]
+exten => s,1,NoOp(=== Start Recording for ${MEMO_CODE} ===)
+same => n,Background(ainslie/prompts/recording_prompt)
+same => n,Playtones(ring)
+same => n,Wait(1)
+same => n,StopPlaytones()
+same => n,Record(ainslie/recordings/${MEMO_CODE}.wav,5,1200,k)
+same => n,Set(DURATION_SEC=$[${RECORDING_INFO(duration)} / 1000])
+same => n,NoOp(Recording finished: STATUS=${RECORD_STATUS} DURATION=${DURATION_SEC}s)
+same => n,GotoIf($[${DURATION_SEC} < 5]?too-short,s,1)
+same => n,Goto(saved-memo,s,1)
+
+; Recording too short
+[too-short]
+exten => s,1,NoOp(=== Recording Too Short (${DURATION_SEC}s) ===)
+same => n,System(rm -f /var/lib/asterisk/sounds/ainslie/recordings/${MEMO_CODE}.wav)
+same => n,Playback(ainslie/prompts/recording_too_short)
+same => n,Goto(no-memo,s,1)
+
+; Recording saved successfully
+[saved-memo]
+exten => s,1,NoOp(=== Recording Saved for ${MEMO_CODE} ===)
+same => n,Set(RECORDING_FILE=ainslie/recordings/${MEMO_CODE})
+same => n,Gosub(playback-handler,s,1(${RECORDING_FILE}))
+same => n,Background(ainslie/prompts/recording_saved)
+same => n,SayDigits(${MEMO_CODE})
+same => n,Background(ainslie/prompts/recording_saved_options)
+same => n,WaitExten(1)
+same => n,Goto(voice-memo,s,1)
+
+; Star (*) - Play the newly recorded message
+exten => *,1,NoOp(=== Play New Recording ===)
+same => n,Background(${RECORDING_FILE})
+same => n,Goto(saved-memo,s,1)
+
+; 1 - Re-record message
+exten => 1,1,NoOp(=== Re-record Message ===)
+same => n,Goto(record-memo,s,1)
+
+; 9 - Delete message (first press)
+exten => 9,1,NoOp(=== Delete Message (First Press) ===)
+same => n,Goto(confirm-delete,s,1)
+
+; Hash (#) - Return to main menu
+exten => #,1,NoOp(=== Return to Main Menu ===)
+same => n,Goto(main-menu,s,1)
+
+; Zero (0) - Voice memo help
+exten => 0,1,NoOp(=== Voice Memo Help ===)
+same => n,Goto(voice-memo,s,1)
+
+; Delete confirmation
+[confirm-delete]
+exten => s,1,NoOp(=== Delete Confirmation ===)
+same => n,Background(ainslie/prompts/delete_confirmation_prompt)
+same => n,SayDigits(${MEMO_CODE})
+same => n,Background(ainslie/prompts/delete_confirmation_options)
+same => n,WaitExten(15)
+same => n,Goto(saved-memo,s,1)
+
+; 9 - Confirm deletion
+exten => 9,1,NoOp(=== Confirm Deletion ===)
+same => n,System(rm -f /var/lib/asterisk/sounds/ainslie/recordings/${MEMO_CODE}.wav)
+same => n,Background(ainslie/prompts/deletion_success)
+same => n,SayDigits(${MEMO_CODE})
+same => n,Goto(voice-memo,s,1)
+
+; Any other key - Cancel deletion
+exten => _X,1,NoOp(=== Cancel Deletion ===)
+same => n,Background(ainslie/prompts/deletion_cancelled)
+same => n,Goto(saved-memo,s,1)
 
 [playback-handler]
 ; Handler only sets LAST_RECORDING_FILE, no playback
