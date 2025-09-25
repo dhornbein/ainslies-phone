@@ -11,10 +11,10 @@
 #   source-audio/prompts/help_main_menu.m4a -> sounds/prompts/help_main_menu.wav
 
 # Process files in current directory (existing behavior)
-for f in *.m4a *.mp3 *.mp4 *.3gp; do
+for f in *.m4a *.mp3 *.mp4 *.3gp *.wav; do
   if [ -f "$f" ]; then
     # Only process files with a digit prefix and an underscore
-    if [[ "$f" =~ ^[0-9]{1,3}_.+\.(m4a|mp3|mp4|3gp)$ ]]; then
+    if [[ "$f" =~ ^[0-9]{1,3}_.+\.(m4a|mp3|mp4|3gp|wav)$ ]]; then
       base_name="${f%.*}"
       # Extract the number prefix
       number_prefix="${f%%_*}"
