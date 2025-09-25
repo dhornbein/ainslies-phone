@@ -71,7 +71,7 @@ same => n,Goto(s,1)
 ; Handle 3-digit codes 000-999
 exten => _XXX,1,NoOp(=== Voice Memo Code: ${EXTEN} ===)
 same => n,Set(MEMO_CODE=${EXTEN})
-same => n,Set(RECORDING_FILE=ainslie/recordings/${MEMO_CODE})
+same => n,Set(RECORDING_FILE=recordings/${MEMO_CODE})
 same => n,GotoIf($[${STAT(e,/var/lib/asterisk/sounds/${RECORDING_FILE}.wav)}]?play-memo,s,1)
 same => n,Goto(no-memo,s,1)
 
@@ -117,7 +117,7 @@ same => n,Goto(voice-memo,s,1)
 ; 000-999 - Go to another recording
 exten => _XXX,1,NoOp(=== Go to recording ${EXTEN} ===)
 same => n,Set(MEMO_CODE=${EXTEN})
-same => n,Set(RECORDING_FILE=ainslie/recordings/${MEMO_CODE})
+same => n,Set(RECORDING_FILE=recordings/${MEMO_CODE})
 same => n,GotoIf($[${STAT(e,/var/lib/asterisk/sounds/${RECORDING_FILE}.wav)}]?play-memo,s,1)
 same => n,Goto(no-memo,s,1)
 
@@ -149,7 +149,7 @@ same => n,Background(ainslie/prompts/recording_prompt)
 same => n,Playtones(ring)
 same => n,Wait(1)
 same => n,StopPlaytones()
-same => n,Record(ainslie/recordings/${MEMO_CODE}.wav,5,1200,k)
+same => n,Record(recordings/${MEMO_CODE}.wav,5,1200,k)
 same => n,Set(DURATION_SEC=$[${RECORDING_INFO(duration)} / 1000])
 same => n,NoOp(Recording finished: STATUS=${RECORD_STATUS} DURATION=${DURATION_SEC}s)
 same => n,GotoIf($[${DURATION_SEC} < 5]?too-short,s,1)
@@ -158,14 +158,14 @@ same => n,Goto(saved-memo,s,1)
 ; Recording too short
 [too-short]
 exten => s,1,NoOp(=== Recording Too Short (${DURATION_SEC}s) ===)
-same => n,System(rm -f /var/lib/asterisk/sounds/ainslie/recordings/${MEMO_CODE}.wav)
+same => n,System(rm -f /var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)
 same => n,Playback(ainslie/prompts/recording_too_short)
 same => n,Goto(no-memo,s,1)
 
 ; Recording saved successfully
 [saved-memo]
 exten => s,1,NoOp(=== Recording Saved for ${MEMO_CODE} ===)
-same => n,Set(RECORDING_FILE=ainslie/recordings/${MEMO_CODE})
+same => n,Set(RECORDING_FILE=recordings/${MEMO_CODE})
 same => n,Gosub(playback-handler,s,1(${RECORDING_FILE}))
 same => n,Background(ainslie/prompts/recording_saved)
 same => n,SayDigits(${MEMO_CODE})
@@ -205,7 +205,7 @@ same => n,Goto(saved-memo,s,1)
 
 ; 9 - Confirm deletion
 exten => 9,1,NoOp(=== Confirm Deletion ===)
-same => n,System(rm -f /var/lib/asterisk/sounds/ainslie/recordings/${MEMO_CODE}.wav)
+same => n,System(rm -f /var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)
 same => n,Background(ainslie/prompts/deletion_success)
 same => n,SayDigits(${MEMO_CODE})
 same => n,Goto(voice-memo,s,1)
