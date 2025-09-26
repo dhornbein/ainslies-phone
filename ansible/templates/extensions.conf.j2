@@ -221,3 +221,17 @@ same => n,Goto(saved-memo,s,1)
 exten => s,1,NoOp(=== Playback Handler: Setting LAST_RECORDING_FILE to ${ARG1} ===)
 same => n,Set(LAST_RECORDING_FILE=${ARG1})
 same => n,Return()
+
+; Random Message Context: Plays a random Ainslie recording 1-9 on pickup
+[random-message]
+exten => 0,1,NoOp(=== Random Message: Play random Ainslie recording 1-9 ===)
+same => n,Set(RANDNUM=${RAND(1,9)})
+same => n,NoOp(Selected random recording: ${RANDNUM})
+same => n,Background(ainslie/${RANDNUM}/recording)
+same => n,Goto(main-menu,s,1)
+
+[ring-random]
+exten => start,1,NoOp(=== Ringing Randomly ===)
+same => n,Set(TIMEOUT=$[${RAND(2,30)}])  ; Randomly choose between 2 to 15 seconds
+same => n,Dial(PJSIP/ht801-endpoint,${TIMEOUT},g)  ; Use the endpoint directly
+same => n,Hangup()

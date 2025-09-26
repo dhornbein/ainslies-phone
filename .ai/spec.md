@@ -160,6 +160,18 @@ Wav files are 8kHz mono WAV files.
 - `recording_saved_options.wav`: Press star to listen to it. Press 1 to re-record. Press 9 to delete. Press zero for help. Press pound to return to the main menu. Or hang up to end the call.
 - `delete_confirmation_options.wav`: Press any other key to cancel.
 
+### Ring Feature (Optional)
+
+Random ring feature that periodically rings the phone to attract attention.
+
+- A systemd timer triggers a bash script periodically (e.g., every 30 minutes).
+- The script uses Asterisk's `channel originate` command to initiate a call to the phone.
+  - `channel originate local/start@ring-random extension 0@random-message`
+- The dialplan context `ring-random` handles the ringing logic:
+- The dialplan context `random-message` plays a random message if the call is answered.
+
+because the gallery has events we shouldn't want to disturb, this feature is optional and can be enabled or disabled as needed.
+
 ## Technical Specifications
 
 ### Network Configuration
