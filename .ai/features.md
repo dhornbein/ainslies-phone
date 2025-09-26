@@ -84,24 +84,15 @@
 **Technical**: Asterisk Background() app with immediate DTMF processing
 **Status**: Background applications replace Playback for instant interruption
 
-### F105: Text-to-Speech Integration
-**Description**: Dynamic audio generation for prompts and content
-**Capabilities**:
-- Festival TTS engine integration
-- Real-time voice synthesis for help prompts
-- Potential for dynamic content generation
-- Consistent robotic voice for system messages
-**Technical**: Festival daemon with Asterisk Festival() application
-**Status**: 🔄 **PLANNED** - Framework designed, installation not deployed
-
-### F108: Delete Confirmation
+### F108: Delete Confirmation ✅
 **Description**: Prevent accidental deletion
+**Status**: Fully implemented and working
 **Behavior**:
 - After recording is saved, `9` prompts: "Press 9 again to confirm deletion..."
 - Second `9` confirms and deletes; any other key cancels
 **Scope**: Available only in the “post-recording” menu for a newly created message
 
-### F106: Timeout Policy
+### F106: Timeout Policy ✅
 **Description**: Inactivity handling
 **Behavior**: If no input for 15 seconds, replay the current context help automatically
 
@@ -156,6 +147,7 @@
 
 ### F301: Ainslie Recording Preservation
 **Description**: Digital preservation of Ainslie's voice recordings
+**Status**: nine recordings have been found
 **Format**: Professional audio quality with phone-bandwidth simulation
 **Organization**: Thematic or chronological categorization by digit
 **Technical**: WAV format at 8kHz or 16kHz mono
@@ -171,8 +163,9 @@
 
 ## Optional/Future Features
 
-### F401: Invite Ringing
+### F401: Invite Ringing ✅
 **Description**: Gentle periodic ringing to attract gallery visitors
+**Status**: Implemented and working but not active, requires a systemd timer to run periodically
 **Behavior**:
 - Configurable timing and frequency
 - Short, non-intrusive ring patterns
@@ -188,8 +181,9 @@
 - Message management and curation
 **Technical**: Asterisk record() application with file management
 
-### F404: Remote Monitoring
-**Description**: Gallery staff oversight capabilities
+### F404: Remote Monitoring ✅
+**Description**: remote system status and usage monitoring
+**Status**: Basic monitoring via SSH and web interface implemented
 **Features**:
 - System health monitoring
 - Usage statistics
@@ -266,9 +260,9 @@ ansible-playbook playbooks/full-setup.yml           # 🎉 Everything automated!
 - Targeted Asterisk reloads (no full service restarts) (working)
 **Technical**: Ansible template-based configuration deployment with handlers
 
-### F605: HT801 Auto-Provisioning ✅
+### F605: HT801 Auto-Provisioning ❌
 **Description**: Programmatic configuration of HT801 device via HTTP API
-**Status**: Fully implemented and working
+**Status**: Implemented but doesn't work, needs testing
 **Capabilities**:
 - Automatic device discovery and connectivity testing (working)
 - HTTP API authentication with multiple credential attempts (working)
@@ -326,9 +320,11 @@ ansible-playbook playbooks/full-setup.yml --tags verify
 **Description**: Graceful handling of system faults
 **Scenarios**:
 - Audio file corruption
-- Network disconnection
 - HT801 registration failure
 **Technical**: Asterisk error handling and automatic recovery
+**Implementation**:
+- Disk space monitoring and cleanup
+- Asterisk service restart on failure
 
 ### F502: Logging and Diagnostics
 **Description**: Troubleshooting and maintenance support
@@ -337,14 +333,6 @@ ansible-playbook playbooks/full-setup.yml --tags verify
 - System boot and error logs
 - Audio playback statistics
 **Technical**: Standard Linux logging with Asterisk CDR
-
-### F503: Configuration Management
-**Description**: Easy system parameter adjustment
-**Parameters**:
-- Audio levels and processing
-- Timing configurations
-- Network settings
-**Technical**: Asterisk configuration files and Linux system config
 
 ### F109: Enhanced Dialplan Features ✅
 **Description**: Updates to the dialplan for improved functionality and user experience.

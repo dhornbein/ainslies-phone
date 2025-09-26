@@ -6,7 +6,7 @@ A memorial gallery installation featuring an interactive retro telephone system 
 **Current Status**: 
 - F001: Phone Pickup Detection ✅
 - F002: Keypad Navigation System ✅
-- F003: Audio Playback Engine ☑ (volume normalization not yet implemented)
+- F003: Audio Playback Engine ✅ (volume normalization implemented)
 - F004: Recording Organization System ✅
 - F005: Hangup Detection & Cleanup ✅
 - F101: Help System ☑ (drafted, needs final voice/recording)
@@ -14,8 +14,8 @@ A memorial gallery installation featuring an interactive retro telephone system 
 - F103: Random Selection ❌ (Removed by design)
 - F201: Offline Operation ✅
 - F202: Boot Sequence Management ✅
-- F203: Content Update System (NEXT)
-- F204: Static Network Configuration ☑ (static config works, but /etc/dhcpcd.conf not present)
+- F203: Content Update System ✅ (update playbook works perfectly)
+- F204: Static Network Configuration ❌ (removed as a task)
 - F303: Memorial Ambiance ✅
 
 See features.md for detailed status and notes.
@@ -118,27 +118,25 @@ See features.md for detailed status and notes.
 
 ### Audio Organization
 ```
-/var/lib/asterisk/sounds/ainslie/
-├── prompts/
-│   └── help_prompt.wav
-├── 1/
-│   ├── recording1.wav
-│   └── recording2.wav (if multiple recordings per digit)
-├── 2/
-│   └── recording.wav
-├── ...
-└── 9/
-│  └── recording.wav
-└── recordings/
-│   └── 000.wav
-│   └── 001.wav
-│   └── ...
+/var/lib/asterisk/sounds/
+├── ainslie/
+│   ├── prompts/
+│   │   ├── help_prompt.wav
+│   │   └── ...
+│   ├── 1/
+│   │   ├── recording.wavnoload => res_config_pgsql.so
+│   ├── 2/
+│   │   └── recording.wav
+│   ├── ...
+│   └── 9/
+│       └── recording.wav
+├── recordings/
+│   ├── 000.wav
+│   ├── 001.wav
+│   ├── ...
 │   └── 999.wav
-└── prompts/
-    └── help_prompt.wav
 ```
-Directory structure are complete.
-Wav files are 8kHz mono WAV files.
+Directory structure is complete. Wav files are 8kHz mono WAV files.
 
 ### Help prompt Script
 
@@ -170,7 +168,7 @@ Random ring feature that periodically rings the phone to attract attention.
 - The dialplan context `ring-random` handles the ringing logic:
 - The dialplan context `random-message` plays a random message if the call is answered.
 
-because the gallery has events we shouldn't want to disturb, this feature is optional and can be enabled or disabled as needed.
+This feature is available but will not be added at this time. It can be enabled in the future if desired.
 
 ## Technical Specifications
 
