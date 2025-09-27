@@ -17,6 +17,7 @@ LAST_MEMO_CODE=
 TONE_GENTAL=442/500,262/100,330/200,220/2000
 TONE_REVERSE=220/500,330/100,262/200,442/2000
 HELP_REPEAT_TIMEOUT=3
+MIN_RECORDING_SIZE=30000
 
 [from-phone]
 ; F001: Phone Pickup Detection - Main entry point when phone goes off-hook
@@ -223,9 +224,23 @@ same => n,Background(ainslie/prompts/recording_prompt)
 same => n,Record(recordings/${MEMO_CODE}.wav,5,1200,k)
 same => n,NoOp(Recording finished: ${RECORD_STATUS} and ${RECORDED_FILE})
 same => n,GotoIf($["${RECORD_STATUS}" = "SILENCE"]?retry,1)
-same => n,GotoIf($["${RECORD_STATUS}" = "DTMF"]?saved-memo,s,1)
-same => n,GotoIf($["${RECORD_STATUS}" = "TIMEOUT"]?saved-memo,s,1)
+same => n,GotoIf($["${RECORD_STATUS}" = "DTMF"]?eval,1)
+same => n,GotoIf($["${RECORD_STATUS}" = "TIMEOUT"]?eval,1)
+same => n,Goto(eval,1)
+
+; evaluate recorded file size and quality
+exten => eval,1,NoOp(=== Evaluating Recording Quality for ${MEMO_CODE} ===)
+same => n,GotoIf($[!${STAT(e,/var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)}]?record,1)
+same => n,Set(FILE_SIZE=${STAT(s,/var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)})
+same => n,NoOp(Recording file size: ${FILE_SIZE} bytes, minimum: ${MIN_RECORDING_SIZE} bytes)
+same => n,GotoIf($[${FILE_SIZE} < ${MIN_RECORDING_SIZE}]?shorty,1)
 same => n,Goto(saved-memo,s,1)
+
+; handle recordings that are too short/small
+exten => shorty,1,NoOp(=== Recording Too Small: ${FILE_SIZE} bytes (< 30KB) ===)
+same => n,System(rm -f /var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)
+same => n,Background(ainslie/prompts/recording_too_short)
+same => n,Goto(s,1)
 
 ; try again if recording failed
 exten => retry,1,NoOp(=== Invalid Recording Attempt ===)
@@ -252,19 +267,16 @@ same => n,GotoIf($[${ATTEMPTS} >= 3]?top-memo,${MEMO_CODE},1)
 same => n,Goto(record,1)
 
 ; F005: Hangup detection
-exten => h,1,NoOp(=== F005: Hangup Detected ===)
-
-; ###########################################################
-; ################### Too Short Context #####################
-; ###########################################################
-[too-short]
-exten => s,1,NoOp(=== Recording Too Short (${DURATION_SEC}s) ===)
-same => n,System(rm -f /var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)
-same => n,Playback(ainslie/prompts/recording_too_short)
-same => n,Goto(no-memo,s,1)
-
-; F005: Hangup detection
-exten => h,1,NoOp(=== F005: Hangup Detected ===)
+exten => h,1,NoOp(=== F005: Hangup Detected During Recording ===)
+same => n,GotoIf($[!${STAT(e,/var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)}]?h,end)
+same => n,Set(FILE_SIZE=${STAT(s,/var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)})
+same => n,NoOp(Hangup cleanup: Recording file size: ${FILE_SIZE} bytes, minimum: ${MIN_RECORDING_SIZE} bytes)
+same => n,GotoIf($[${FILE_SIZE} < ${MIN_RECORDING_SIZE}]?h,cleanup)
+same => n,NoOp(Recording preserved: ${MEMO_CODE}.wav (${FILE_SIZE} bytes))
+same => n,Goto(h,end)
+same => n(cleanup),System(rm -f /var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)
+same => n,NoOp(Cleaned up undersized recording: ${MEMO_CODE}.wav (${FILE_SIZE} bytes))
+same => n(end),NoOp(Hangup cleanup complete)
 
 ; ###########################################################
 ; ################### Saved Memo Context ####################

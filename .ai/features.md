@@ -96,10 +96,6 @@
 **Description**: Inactivity handling
 **Behavior**: If no input for 15 seconds, replay the current context help automatically
 
-### F107: Minimum Recording Length
-**Description**: Avoid empty clips
-**Behavior**: Discard recordings shorter than 5 seconds and reprompt to record
-
 ### F109: Idle Timeout
 **Description**: Automatic switch context after prolonged inactivity and randomly play a recording
 **Behavior**: If no input for 2 minutes, start playing random recordings
@@ -142,9 +138,10 @@
 - DTMF response is immediate for single-digit extensions (snappy interaction)
 **Technical**: ffmpeg conversion with loudnorm, Ansible automation, direct file system operations
 
-### F204: Removes memo recordings that are very small
+### F204: Removes memo recordings that are very small ✅
 **Description**: Automatic cleanup of very short voice memos
 **Behavior**: During the recording process, if the recorded audio file is less than 30kb, it is automatically deleted and the user is prompted to record again.
+**Status**: Fully implemented and working
 
 ## Memorial-Specific Features
 
