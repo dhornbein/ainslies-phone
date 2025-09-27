@@ -16,9 +16,10 @@ LAST_RECORDING_FILE=
 LAST_MEMO_CODE=
 TONE_GENTAL=442/500,262/100,330/200,220/2000
 TONE_REVERSE=220/500,330/100,262/200,442/2000
-HELP_REPEAT_TIMEOUT=3
+HELP_REPEAT_TIMEOUT=5
 MIN_RECORDING_SIZE=30000
 MAX_RECORDING_SILENCE=6
+MAX_IDLE_COUNT=5
 
 [from-phone]
 ; F001: Phone Pickup Detection - Main entry point when phone goes off-hook
@@ -49,6 +50,7 @@ same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
 same => n,Goto(s,1)
 
 exten => s,1,NoOp(=== Main Menu Help ===)
+same => n,Gosub(idle,reset,1)
 same => n,Goto(0,1)
 
 ; Digits 1-9: Play Ainslie's recordings
@@ -76,7 +78,7 @@ exten => end,1,NoOp(=== End Recording Playback ===)
 same => n,WaitExten(1)
 same => n,Playtones(${TONE_REVERSE})
 same => n,WaitExten(1.2)
-same => n,Goto(main-menu,s,1)
+same => n,Goto(s,1)
 
 ; Hash (#) - Enter voice memo mode
 exten => #,1,NoOp(=== Enter Voice Memo Mode ===)
@@ -88,7 +90,8 @@ same => n,Background(ainslie/prompts/help_main_menu)
 same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
 same => n,Playtones(${TONE_GENTAL})
 same => n,WaitExten(2)
-same => n,Goto(main-menu,s,1) 
+same => n,Gosub(idle,count,1)
+same => n,Goto(0,1) 
 
 ; F005: Hangup detection
 exten => h,1,NoOp(=== F005: Hangup Detected ===)
@@ -98,6 +101,7 @@ exten => h,1,NoOp(=== F005: Hangup Detected ===)
 ; ###########################################################
 [top-memo]
 exten => s,1,NoOp(=== Top Memo Landing ===)
+same => n,Gosub(idle,reset,1)
 same => n,Goto(0,1) ; Go to help prompt
 
 ; Handle 3-digit codes 111-999
@@ -109,7 +113,7 @@ same => n,Goto(no-memo,s,1)
 ; Star (*) - Repeat last recording in voice memo context
 exten => *,1,NoOp(=== Repeat Last Recording ===)
 same => n,GotoIf($[${STAT(e,/var/lib/asterisk/sounds/recordings/${LAST_MEMO_CODE}.wav)}]?play-memo,play,1)
-same => n,Goto(top-memo,s,1)
+same => n,Goto(s,1)
 
 ; Hash (#) - Return to main menu
 exten => #,1,NoOp(=== Return to Main Menu ===)
@@ -121,7 +125,8 @@ same => n,Background(ainslie/prompts/help_voice_memo_menu)
 same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
 same => n,Playtones(${TONE_GENTAL})
 same => n,WaitExten(2)
-same => n,Goto(s,1)
+same => n,Gosub(idle,count,1)
+same => n,Goto(0,1)
 
 ; catch-all for any other input
 exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
@@ -143,8 +148,9 @@ same => n,Goto(play,1)
 
 exten => play,1,NoOp(=== Play Recording ===)
 same => n,Background(recordings/${LAST_MEMO_CODE})
+same => n,WaitExten(1)
 same => n,Playtones(220)
-same => n,WaitExten(2)
+same => n,WaitExten(1)
 same => n,Background(ainslie/prompts/post_recording_message)
 same => n,SayDigits(${LAST_MEMO_CODE})
 same => n,WaitExten(1)
@@ -185,8 +191,7 @@ exten => h,1,NoOp(=== F005: Hangup Detected ===)
 ; ###########################################################
 [no-memo]
 exten => s,1,NoOp(=== No Recording Found for ${MEMO_CODE} ===)
-same => n,Background(ainslie/prompts/no_recording_found)
-same => n,Background(digits/${MEMO_CODE:0:1}&digits/${MEMO_CODE:1:1}&digits/${MEMO_CODE:2:1})
+same => n,Gosub(idle,reset,1)
 same => n,Goto(0,1)
 
 ; Star (*) - Start recording
@@ -199,9 +204,12 @@ same => n,Goto(top-memo,s,1)
 
 ; Zero (0) - Voice memo help
 exten => 0,1,NoOp(=== No Memo Help ===)
+same => n,Background(ainslie/prompts/no_recording_found)
+same => n,Background(digits/${MEMO_CODE:0:1}&digits/${MEMO_CODE:1:1}&digits/${MEMO_CODE:2:1})
 same => n,Background(ainslie/prompts/no_recording_options)
 same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
-same => n,Goto(s,1)
+same => n,Gosub(idle,count,1)
+same => n,Goto(0,1)
 
 ; catch-all for any other input
 exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
@@ -250,7 +258,7 @@ same => n,System(rm -f /var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)
 same => n,Background(ainslie/prompts/recording_too_short)
 same => n,Set(ATTEMPTS=$[${ATTEMPTS} + 1])
 same => n,GotoIf($[${ATTEMPTS} >= 3]?top-memo,s,1)
-same => n,Goto(s,1)
+same => n,Goto(record,1)
 
 ; try again if recording failed
 exten => retry,1,NoOp(=== Invalid Recording Attempt ===)
@@ -294,15 +302,17 @@ same => n(end),NoOp(Hangup cleanup complete)
 [saved-memo]
 exten => s,1,NoOp(=== Recording Saved for ${MEMO_CODE} ===)
 same => n,Set(LAST_MEMO_CODE=${MEMO_CODE})
-same => n,Background(ainslie/prompts/recording_saved)
-same => n,Background(digits/${MEMO_CODE:0:1}&digits/${MEMO_CODE:1:1}&digits/${MEMO_CODE:2:1})
+same => n,Gosub(idle,reset,1)
 same => n,Goto(0,1)
 
 ; Zero (0) - Saved memo help
 exten => 0,1,NoOp(=== Saved Memo Help ===)
+same => n,Background(ainslie/prompts/recording_saved)
+same => n,Background(digits/${MEMO_CODE:0:1}&digits/${MEMO_CODE:1:1}&digits/${MEMO_CODE:2:1})
 same => n,Background(ainslie/prompts/recording_saved_options)
-same => n,WaitExten(5)
-same => n,Goto(s,3) ; Back to start after memo code update
+same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
+same => n,Gosub(idle,count,1)
+same => n,Goto(0,1)
 
 ; Star (*) - Play the newly recorded message
 exten => *,1,NoOp(=== Play New Recording ===)
@@ -323,7 +333,7 @@ same => n,Goto(confirm-delete,s,1)
 
 ; catch-all for any other input
 exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
-same => n,Goto(0,1)
+same => n,Goto(s,3)
 
 ; F005: Hangup detection
 exten => h,1,NoOp(=== F005: Hangup Detected ===)
@@ -333,6 +343,7 @@ exten => h,1,NoOp(=== F005: Hangup Detected ===)
 ; ###########################################################
 [confirm-delete]
 exten => s,1,NoOp(=== Delete Confirmation ===)
+same => n,Gosub(idle,reset,1)
 same => n,Goto(0,1)
 
 ; Zero (0) - Replay delete confirmation
@@ -341,7 +352,8 @@ same => n,Background(ainslie/prompts/delete_confirmation)
 same => n,Background(digits/${MEMO_CODE:0:1}&digits/${MEMO_CODE:1:1}&digits/${MEMO_CODE:2:1})
 same => n,Background(ainslie/prompts/delete_confirmation_options)
 same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
-same => n,Goto(s,1)
+same => n,Gosub(idle,count,1)
+same => n,Goto(0,1)
 
 ; 9 - Confirm deletion
 exten => 9,1,NoOp(=== Confirm Deletion (Second Press) ===)
@@ -367,6 +379,35 @@ same => n,Set(RANDNUM=${RAND(1,9)})
 same => n,NoOp(Selected random recording: ${RANDNUM})
 same => n,Background(ainslie/${RANDNUM}/recording)
 same => n,Goto(main-menu,s,1)
+
+; ###########################################################
+; ################### Idle Playback Context #################
+; ###########################################################
+[idle]
+exten => s,1,NoOp(=== Entering Idle Mode ===)
+same => n,Set(IDLE_ACTIVE=1)
+same => n,Goto(play,1)
+
+exten => play,1,Set(RANDNUM=${RAND(1,9)})
+same => n,NoOp(Playing random recording in idle mode: ${RANDNUM})
+same => n,Background(ainslie/${RANDNUM}/recording)
+same => n,WaitExten(${RAND(5,120)})  ; 5 second pause between recordings
+same => n,Goto(play,1)  ; Loop to next random recording
+
+exten => count,1,Set(IDLE_COUNT=$[${IDLE_COUNT} + 1])
+same => n,GotoIf($[${IDLE_COUNT} >= ${MAX_IDLE_COUNT}]?s,1)
+same => n,Return()
+
+exten => reset,1,Set(IDLE_COUNT=0)
+same => n,Return()
+
+; Any key press exits idle mode and returns to main menu
+exten => _[*#0-9],1,NoOp(=== User Input Detected - Exiting Idle Mode ===)
+same => n,Set(IDLE_ACTIVE=0)
+same => n,Goto(main-menu,${EXTEN},1)
+
+; F005: Hangup detection
+exten => h,1,NoOp(=== F005: Hangup Detected in Idle Mode ===)
 
 ; ###########################################################
 ; ################### Ring Random Context ###################

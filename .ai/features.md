@@ -96,13 +96,15 @@
 **Description**: Inactivity handling
 **Behavior**: If no input for 15 seconds, replay the current context help automatically
 
-### F109: Idle Timeout
+### F109: Idle Timeout ✅
 **Description**: Automatic switch context after prolonged inactivity and randomly play a recording
-**Behavior**: If no input for 2 minutes, start playing random recordings
+**Behavior**: MAX_IDLE_COUNT measures inactivity and after reaching the limit, switches to idle context and plays random recordings with pauses in between
+**Status**: Fully implemented and working
 
-### F110: Ability to delete saved messages
-**Description**: When listening to a saved message, press 9 to delete it
-**Behavior**: After pressing 9, system prompts "Press 9 again to confirm deletion, or any other key to cancel." If 9 is pressed again, the message is deleted and user is returned to main menu. If any other key is pressed, deletion is cancelled and user is returned to main menu.
+### F110: Ability to delete saved messages ✅
+**Description**: When listening to a saved message, press 00 to delete it
+**Behavior**: After pressing 00, send to delete confirmation prompt
+**Status**: Fully implemented and working
 
 ## System Features
 
@@ -172,9 +174,9 @@
 - Easily enabled/disabled
 **Technical**: Asterisk automatic call generation to phone
 
-### F402: Message Recording ☑
+### F402: Message Recording ✅
 **Description**: Allow visitors to leave messages about Ainslie
-**Status**: Implemented, not tested
+**Status**: Implemented
 **Functionality**:
 - Record after specific key sequence
 - Playback capability for other visitors
@@ -333,6 +335,9 @@ ansible-playbook playbooks/full-setup.yml --tags verify
 - System boot and error logs
 - Audio playback statistics
 **Technical**: Standard Linux logging with Asterisk CDR
+
+### F503: Replace off hook beeping with something more pleasant
+**Description**: Replace default HT801 off-hook beep with custom sound
 
 ### F109: Enhanced Dialplan Features ✅
 **Description**: Updates to the dialplan for improved functionality and user experience.

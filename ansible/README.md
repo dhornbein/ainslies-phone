@@ -12,6 +12,11 @@ The system supports simple, automated updates of all phone audio content:
   - Place each file in the correct subfolder as `recording.wav` for Asterisk
   - Sync files to `/var/lib/asterisk/sounds/ainslie/` with correct permissions
   - No Asterisk restart is required for new audio
+
+  ```bash
+  # use watch mode for automatic updates on file changes
+  chokidar  -c "ansible-playbook playbooks/update.yml --tags asterisk_config"
+  ```
 3. **Dial a single digit (1-9) on the phone** to play the corresponding recording. DTMF response is immediate and snappy.
 
 **Technical details:**
