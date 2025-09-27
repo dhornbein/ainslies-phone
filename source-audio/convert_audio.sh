@@ -54,6 +54,8 @@ if [ -d "$PROMPTS_DIR" ]; then
         continue
       fi
       echo "Converting '$f' -> '$output_file'..."
+      # Normalization filter and parameters can be set via environment variables
+      NORMALIZE_FILTER="${NORMALIZE_FILTER:-loudnorm=I=-18:TP=-1:LRA=11}"
       ffmpeg -y -i "$f" -af "$NORMALIZE_FILTER" -c:a pcm_s16le -ar 8000 -ac 1 "$output_file"
     fi
   done

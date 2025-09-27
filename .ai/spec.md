@@ -138,25 +138,28 @@ See features.md for detailed status and notes.
 ```
 Directory structure is complete. Wav files are 8kHz mono WAV files.
 
-### Help prompt Script
+### Help Prompt Scripts
 
-- `help_main_menu.wav`: Welcome to the Ainslie Oneil memorial phone. Press 1 through 9 to hear a recording of Ainslie. Press star to repeat the last recording. Press pound to listen to or record a voice memo. Press zero to hear this message again. Hang up to end the call.
+- `help_main_menu.wav`: Welcome to the Ainslie O'Neil memorial phone. Press 1 through 9 to hear a recording of Ainslie. Press star to repeat the last recording. Press pound to access voice memo mode. Press zero to hear this message again. Hang up to end your call.
 
-- `help_voice_memo_menu.wav`: You are in voice memo mode. Enter a three-digit number to listen to a recording. If no recording exists, you can record a message. Press star to repeat the last message, pound to return to the main menu, zero for help, or hang up to end the call.
+- `help_voice_memo_menu.wav`: You are in voice memo mode. Enter a three-digit number to listen to a recording. If no recording exists, you can record a message at that number. Press star to repeat the last memo. Press pound to return to the main menu. Press zero to hear this message again.
 
-- `post_recording_message.wav`: That was the recording at number. 
-- `no_recording_found.wav`: No recording found at number. 
-- `recording_prompt.wav`: You may now record your message after the beep. Press pound when finished or hang up.
-- `recording_saved.wav`: Your message has been saved at number. 
+- `post_recording_message.wav`: That was the recording at number [digits]. 
+
+- `no_recording_found.wav`: No recording found at number [digits]. 
+- `no_recording_options.wav`: To record a message at this number, press 1. Press pound to return to the memo menu. Press zero to repeat this message.
+
+- `recording_prompt.wav`: You may now record your message after the beep. Press pound when finished, or hang up.
+
 - `recording_too_short.wav`: Your recording was too short. Please try again and speak for at least 5 seconds.
-- `delete_confirmation.wav`: Press 9 again to confirm deletion of the message at number. 
-- `deletion_success.wav`: Your message has been deleted from number. 
-- `deletion_cancelled.wav`: Deletion cancelled.
 
-- `voice_memo_options.wav`: Press star to repeat the message. Press zero for help. Press pound to return to the main menu. Or enter three numbers to go to another recording.
-- `no_recording_options.wav`: To record a message, press 1. Press zero for help. Press pound to return to the main menu. Or hang up to end the call.
-- `recording_saved_options.wav`: Press star to listen to it. Press 1 to re-record. Press 9 to delete. Press zero for help. Press pound to return to the main menu. Or hang up to end the call.
+- `recording_saved.wav`: Your message has been saved at number [digits]. 
+- `recording_saved_options.wav`: Press star to listen to your recording. Press 1 to re-record. Press 9 to delete. Press pound to return to the main menu. Press zero to repeat this message.
+
+- `delete_confirmation.wav`: Press 9 again to confirm deletion of the message at number [digits]. 
 - `delete_confirmation_options.wav`: Press any other key to cancel.
+- `deletion_success.wav`: Your message has been deleted from number [digits].
+- `deletion_cancelled.wav`: Deletion cancelled.
 
 ### Ring Feature (Optional)
 

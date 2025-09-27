@@ -100,6 +100,14 @@
 **Description**: Avoid empty clips
 **Behavior**: Discard recordings shorter than 5 seconds and reprompt to record
 
+### F109: Idle Timeout
+**Description**: Automatic switch context after prolonged inactivity and randomly play a recording
+**Behavior**: If no input for 2 minutes, start playing random recordings
+
+### F110: Ability to delete saved messages
+**Description**: When listening to a saved message, press 9 to delete it
+**Behavior**: After pressing 9, system prompts "Press 9 again to confirm deletion, or any other key to cancel." If 9 is pressed again, the message is deleted and user is returned to main menu. If any other key is pressed, deletion is cancelled and user is returned to main menu.
+
 ## System Features
 
 ### F201: Offline Operation ✅
@@ -134,14 +142,9 @@
 - DTMF response is immediate for single-digit extensions (snappy interaction)
 **Technical**: ffmpeg conversion with loudnorm, Ansible automation, direct file system operations
 
-### F204: Static Network Configuration ☑
-**Description**: Reliable networking without DHCP dependencies
-**Status**: ☑ Static config works, but /etc/dhcpcd.conf does not exist; /etc/dhcp/dhclient.conf is empty
-**Configuration**:
-- Pi: 192.168.50.10/24
-- HT801: 192.168.50.20/24
-- No gateway or DNS required
-**Technical**: /etc/dhcpcd.conf static assignment (not present); check NetworkManager or other config
+### F204: Removes memo recordings that are very small
+**Description**: Automatic cleanup of very short voice memos
+**Behavior**: During the recording process, if the recorded audio file is less than 30kb, it is automatically deleted and the user is prompted to record again.
 
 ## Memorial-Specific Features
 

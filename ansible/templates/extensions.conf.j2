@@ -13,74 +13,93 @@ writeprotect=no
 ; LAST_RECORDING_FILE should be empty when no recording has been played.
 ; Avoid using literal quotes here (Asterisk would set the value to the two characters: "").
 LAST_RECORDING_FILE=
+LAST_MEMO_CODE=
+TONE_GENTAL=442/500,262/100,330/200,220/2000
+TONE_REVERSE=220/500,330/100,262/200,442/2000
+HELP_REPEAT_TIMEOUT=3
 
 [from-phone]
 ; F001: Phone Pickup Detection - Main entry point when phone goes off-hook
 ; Set in the HT801 FXS PORT > Call Settings > Off-hook Auto Dial (set to 0)
 exten => 0,1,NoOp(=== F001: Phone Pickup Detection ===)
-same => n,Playtones(dial)
-same => n,Wait(2)
-same => n,StopPlaytones()
-same => n,Goto(main-menu,s,1)
+same => n,Goto(main-menu,welcome,1)
 
 ; Capture any single digit and send to main menu
 exten => _X,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
-same => n,Goto(main-menu,s,1)
+same => n,Goto(main-menu,${EXTEN},1)
 
-; F005: Hangup detection and cleanup
-exten => h,1,NoOp(=== F005: Hangup Detected - Cleaning Up ===)
-same => n,Set(LAST_RECORDING_FILE=)
-same => n,NoOp(Session terminated cleanly)
+; F005: Hangup detection
+exten => h,1,NoOp(=== F005: Hangup Detected ===)
 
-; Main Menu Context
+; ###########################################################
+; ################### Main Menu Context #####################
+; ###########################################################
 [main-menu]
-exten => s,1,NoOp(=== Main Menu Help ===)
+
+exten => welcome,1,NoOp(=== Welcome ===)
+same => n,Answer()
+same => n,Playtones(dial)
+same => n,WaitExten(2)
+same => n,Playtones(${TONE_GENTAL})
+same => n,WaitExten(2)
 same => n,Background(ainslie/prompts/help_main_menu)
-same => n,WaitExten(15)
+same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
 same => n,Goto(s,1)
+
+exten => s,1,NoOp(=== Main Menu Help ===)
+same => n,Goto(0,1)
 
 ; Digits 1-9: Play Ainslie's recordings
 exten => _[1-9],1,NoOp(=== Playing Ainslie Recording ${EXTEN} ===)
-same => n,Gosub(playback-handler,s,1(ainslie/${EXTEN}/recording))
+same => n,Set(LAST_RECORDING_FILE=ainslie/${EXTEN}/recording)
 same => n,Background(ainslie/${EXTEN}/recording)
-same => n,WaitExten(1)
-same => n,Goto(main-menu,s,1)
+same => n,Goto(end,1)
 
 ; Star (*) - Repeat last played recording
 exten => *,1,NoOp(=== Repeat Last Recording ===)
 same => n,GotoIf($["${LAST_RECORDING_FILE}" = ""]?main-menu,s,1)
 same => n,Background(${LAST_RECORDING_FILE})
+same => n,Goto(end,1)
+
+; end recording playback
+exten => end,1,NoOp(=== End Recording Playback ===)
 same => n,WaitExten(1)
+same => n,Playtones(${TONE_REVERSE})
+same => n,WaitExten(1.2)
 same => n,Goto(main-menu,s,1)
 
 ; Hash (#) - Enter voice memo mode
 exten => #,1,NoOp(=== Enter Voice Memo Mode ===)
-same => n,Goto(voice-memo,s,1)
+same => n,Goto(top-memo,s,1)
 
 ; Zero (0) - Replay help
-exten => 0,1,NoOp(=== Main Menu Help ===)
-same => n,Goto(main-menu,s,1)
+exten => 0,1,NoOp(=== Press 0 Zero ===)
+same => n,Background(ainslie/prompts/help_main_menu)
+same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
+same => n,Playtones(${TONE_GENTAL})
+same => n,WaitExten(2)
+same => n,Goto(main-menu,s,1) 
 
-; Voice Memo Context
-[voice-memo]
-exten => s,1,NoOp(=== Voice Memo Help ===)
-same => n,Background(ainslie/prompts/help_voice_memo_menu)
-same => n,WaitExten(15)
-same => n,Goto(s,1)
+; F005: Hangup detection
+exten => h,1,NoOp(=== F005: Hangup Detected ===)
 
-; Handle 3-digit codes 000-999
-exten => _XXX,1,NoOp(=== Voice Memo Code: ${EXTEN} ===)
+; ###########################################################
+; ############### Top Memo Menu Context #####################
+; ###########################################################
+[top-memo]
+exten => s,1,NoOp(=== Top Memo Landing ===)
+same => n,Goto(0,1) ; Go to help prompt
+
+; Handle 3-digit codes 111-999
+exten => _ZZZ,1,NoOp(=== Voice Memo Code: ${EXTEN} ===)
 same => n,Set(MEMO_CODE=${EXTEN})
-same => n,Set(RECORDING_FILE=recordings/${MEMO_CODE})
-same => n,GotoIf($[${STAT(e,/var/lib/asterisk/sounds/${RECORDING_FILE}.wav)}]?play-memo,s,1)
+same => n,GotoIf($[${STAT(e,/var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)}]?play-memo,s,1)
 same => n,Goto(no-memo,s,1)
 
 ; Star (*) - Repeat last recording in voice memo context
 exten => *,1,NoOp(=== Repeat Last Recording ===)
-same => n,GotoIf($["${LAST_RECORDING_FILE}" = ""]?voice-memo,s,1)
-same => n,Background(${LAST_RECORDING_FILE})
-same => n,WaitExten(1)
-same => n,Goto(voice-memo,s,1)
+same => n,GotoIf($[${STAT(e,/var/lib/asterisk/sounds/recordings/${LAST_MEMO_CODE}.wav)}]?play-memo,play,1)
+same => n,Goto(top-memo,s,1)
 
 ; Hash (#) - Return to main menu
 exten => #,1,NoOp(=== Return to Main Menu ===)
@@ -88,95 +107,189 @@ same => n,Goto(main-menu,s,1)
 
 ; Zero (0) - Replay voice memo help
 exten => 0,1,NoOp(=== Voice Memo Help ===)
-same => n,Goto(voice-memo,s,1)
+same => n,Background(ainslie/prompts/help_voice_memo_menu)
+same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
+same => n,Playtones(${TONE_GENTAL})
+same => n,WaitExten(2)
+same => n,Goto(s,1)
 
-; Play existing memo and show options
+; catch-all for any other input
+exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+same => n,Goto(top-memo,s,1)
+
+exten => _ZZ,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+same => n,Goto(top-memo,s,1)
+
+; F005: Hangup detection
+exten => h,1,NoOp(=== F005: Hangup Detected ===)
+
+; ###########################################################
+; ############### Play Existing Memo Context ################
+; ###########################################################
 [play-memo]
-exten => s,1,NoOp(=== Playing Recording ${RECORDING_FILE} ===)
-same => n,Gosub(playback-handler,s,1(${RECORDING_FILE}))
-same => n,Background(${RECORDING_FILE})
+exten => s,1,NoOp(=== queuing up recording: ${MEMO_CODE} ===)
+same => n,Set(LAST_MEMO_CODE=${MEMO_CODE})  
+same => n,Goto(play,1)
+
+exten => play,1,NoOp(=== Play Recording ===)
+same => n,Background(recordings/${LAST_MEMO_CODE})
+same => n,Playtones(220)
+same => n,WaitExten(2)
 same => n,Background(ainslie/prompts/post_recording_message)
-same => n,SayDigits(${MEMO_CODE})
-same => n,Background(ainslie/prompts/post_recording_options)
+same => n,SayDigits(${LAST_MEMO_CODE})
 same => n,WaitExten(1)
-same => n,Goto(voice-memo,s,1)
+same => n,Goto(top-memo,s,1)
 
-; Star (*) - Repeat the just-played recording
-exten => *,1,NoOp(=== Repeat Recording ===)
-same => n,Background(${RECORDING_FILE})
-same => n,Goto(play-memo,s,1)
+; Hash (#) - Return to main top-memo menu
+exten => #,1,NoOp(=== Return to Main Voice Memo Menu ===)
+same => n,Goto(top-memo,s,1)
 
-; Hash (#) - Return to main menu
-exten => #,1,NoOp(=== Return to Main Menu ===)
-same => n,Goto(main-menu,s,1)
+; Zero (0) - Pass back to voice memo menu
+exten => 0,1,NoOp(=== Pass Back to Voice Memo Menu ===)
+same => n,Goto(top-memo,s,1)
 
-; Zero (0) - Voice memo help
-exten => 0,1,NoOp(=== Voice Memo Help ===)
-same => n,Goto(voice-memo,s,1)
+; Double Zero (00) - Delete Message
+exten => 00,1,NoOp(=== Delete Message ===)
+same => n,Goto(confirm-delete,s,1)
 
-; 000-999 - Go to another recording
-exten => _XXX,1,NoOp(=== Go to recording ${EXTEN} ===)
-same => n,Set(MEMO_CODE=${EXTEN})
-same => n,Set(RECORDING_FILE=recordings/${MEMO_CODE})
-same => n,GotoIf($[${STAT(e,/var/lib/asterisk/sounds/${RECORDING_FILE}.wav)}]?play-memo,s,1)
-same => n,Goto(no-memo,s,1)
+; Star (*) - Repeat this message
+exten => *,1,NoOp(=== Repeat This Message ===)
+same => n,Goto(top-memo,*,1)
 
-; No recording found - offer to record
+; 111-999 - Go to another recording
+exten => _ZZZ,1,NoOp(=== Go to recording ${EXTEN} ===)
+same => n,Goto(top-memo,${EXTEN},1)
+
+; catch-all for any other input
+exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+same => n,Goto(top-memo,${EXTEN},1)
+
+exten => _ZZ,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+same => n,Goto(top-memo,${EXTEN},1)
+
+; F005: Hangup detection
+exten => h,1,NoOp(=== F005: Hangup Detected ===)
+
+; ###########################################################
+; ################### No Memo Context #######################
+; ###########################################################
 [no-memo]
 exten => s,1,NoOp(=== No Recording Found for ${MEMO_CODE} ===)
 same => n,Background(ainslie/prompts/no_recording_found)
-same => n,SayDigits(${MEMO_CODE})
-same => n,Background(ainslie/prompts/no_recording_options)
-same => n,WaitExten(15)
-same => n,Goto(no-memo,s,1)
+same => n,Background(digits/${MEMO_CODE:0:1}&digits/${MEMO_CODE:1:1}&digits/${MEMO_CODE:2:1})
+same => n,Goto(0,1)
 
 ; 1 - Start recording
 exten => 1,1,NoOp(=== Start Recording ===)
 same => n,Goto(record-memo,s,1)
 
-; Hash (#) - Return to main menu
-exten => #,1,NoOp(=== Return to Main Menu ===)
-same => n,Goto(main-menu,s,1)
+; Hash (#) - Return to main top-memo menu
+exten => #,1,NoOp(=== Return to Top Memo Menu ===)
+same => n,Goto(top-memo,s,1)
 
-; Zero (0) - Repeat this message
-exten => 0,1,NoOp(=== Repeat No Recording Message ===)
-same => n,Goto(no-memo,s,1)
+; Star (*) - Repeat this message
+exten => *,1,NoOp(=== Repeat No Memo Message ===)
+same => n,Goto(s,1)
 
-; Recording workflow
+; Zero (0) - Voice memo help
+exten => 0,1,NoOp(=== No Memo Help ===)
+same => n,Background(ainslie/prompts/no_recording_options)
+same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
+same => n,Goto(s,1)
+
+; catch-all for any other input
+exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+same => n,NoOp(=== Repeat No Memo Message ===)
+same => n,Goto(s,1)
+
+; 111-999 - Go to another recording
+exten => _ZZZ,1,NoOp(=== Go to recording ${EXTEN} ===)
+same => n,Goto(top-memo,${EXTEN},1)
+
+; F005: Hangup detection
+exten => h,1,NoOp(=== F005: Hangup Detected ===)
+
+; ###########################################################
+; ################## Record Memo Context ####################
+; ###########################################################
 [record-memo]
-exten => s,1,NoOp(=== Start Recording for ${MEMO_CODE} ===)
+exten => s,1,NoOp(=== Enter Record Memo ===)
+same => n,Set(ATTEMPTS=0)
+same => n,Goto(record,1)
+
+; record memo
+exten => record,1,NoOp(=== Start Recording for ${MEMO_CODE} ===)
 same => n,Background(ainslie/prompts/recording_prompt)
-same => n,Playtones(ring)
-same => n,Wait(1)
-same => n,StopPlaytones()
 same => n,Record(recordings/${MEMO_CODE}.wav,5,1200,k)
-same => n,Set(DURATION_SEC=$[${RECORDING_INFO(duration)} / 1000])
-same => n,NoOp(Recording finished: STATUS=${RECORD_STATUS} DURATION=${DURATION_SEC}s)
-same => n,GotoIf($[${DURATION_SEC} < 5]?too-short,s,1)
+same => n,NoOp(Recording finished: ${RECORD_STATUS} and ${RECORDED_FILE})
+same => n,GotoIf($["${RECORD_STATUS}" = "SILENCE"]?retry,1)
+same => n,GotoIf($["${RECORD_STATUS}" = "DTMF"]?saved-memo,s,1)
+same => n,GotoIf($["${RECORD_STATUS}" = "TIMEOUT"]?saved-memo,s,1)
 same => n,Goto(saved-memo,s,1)
 
-; Recording too short
+; try again if recording failed
+exten => retry,1,NoOp(=== Invalid Recording Attempt ===)
+same => n,Set(ATTEMPTS=$[${ATTEMPTS} + 1])
+same => n,GotoIf($[${ATTEMPTS} >= 3]?confirm-delete,9,1)
+same => n,Goto(top-memo,s,1)
+
+; pound (#) - Return to main no-memo menu
+exten => #,1,NoOp(=== Return to Main No Memo Menu ===)
+same => n,Goto(no-memo,s,1)
+
+; star (*) - Repeat recording prompt
+exten => *,1,NoOp(=== Repeat Recording Prompt ===)
+same => n,Goto(record,1)
+
+; Zero (0) - Record memo help
+exten => 0,1,NoOp(=== Record Memo Help ===)
+same => n,Goto(record,1)
+
+; catch-all for any other input
+exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+same => n,Set(ATTEMPTS=$[${ATTEMPTS} + 1])
+same => n,GotoIf($[${ATTEMPTS} >= 3]?top-memo,${MEMO_CODE},1)
+same => n,Goto(record,1)
+
+; F005: Hangup detection
+exten => h,1,NoOp(=== F005: Hangup Detected ===)
+
+; ###########################################################
+; ################### Too Short Context #####################
+; ###########################################################
 [too-short]
 exten => s,1,NoOp(=== Recording Too Short (${DURATION_SEC}s) ===)
 same => n,System(rm -f /var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)
 same => n,Playback(ainslie/prompts/recording_too_short)
 same => n,Goto(no-memo,s,1)
 
-; Recording saved successfully
+; F005: Hangup detection
+exten => h,1,NoOp(=== F005: Hangup Detected ===)
+
+; ###########################################################
+; ################### Saved Memo Context ####################
+; ###########################################################
 [saved-memo]
 exten => s,1,NoOp(=== Recording Saved for ${MEMO_CODE} ===)
-same => n,Set(RECORDING_FILE=recordings/${MEMO_CODE})
-same => n,Gosub(playback-handler,s,1(${RECORDING_FILE}))
+same => n,Set(LAST_MEMO_CODE=${MEMO_CODE})
 same => n,Background(ainslie/prompts/recording_saved)
-same => n,SayDigits(${MEMO_CODE})
+same => n,Background(digits/${MEMO_CODE:0:1}&digits/${MEMO_CODE:1:1}&digits/${MEMO_CODE:2:1})
+same => n,Goto(0,1)
+
+; Zero (0) - Saved memo help
+exten => 0,1,NoOp(=== Saved Memo Help ===)
 same => n,Background(ainslie/prompts/recording_saved_options)
-same => n,WaitExten(1)
-same => n,Goto(voice-memo,s,1)
+same => n,WaitExten(5)
+same => n,Goto(s,3) ; Back to start after memo code update
 
 ; Star (*) - Play the newly recorded message
 exten => *,1,NoOp(=== Play New Recording ===)
-same => n,Background(${RECORDING_FILE})
-same => n,Goto(saved-memo,s,1)
+same => n,Background(recordings/${MEMO_CODE})
+same => n,Goto(s,3)
+
+; Hash (#) - Return to main menu
+exten => #,1,NoOp(=== Return to Main Menu ===)
+same => n,Goto(top-memo,s,1)
 
 ; 1 - Re-record message
 exten => 1,1,NoOp(=== Re-record Message ===)
@@ -186,43 +299,46 @@ same => n,Goto(record-memo,s,1)
 exten => 9,1,NoOp(=== Delete Message (First Press) ===)
 same => n,Goto(confirm-delete,s,1)
 
-; Hash (#) - Return to main menu
-exten => #,1,NoOp(=== Return to Main Menu ===)
-same => n,Goto(main-menu,s,1)
+; catch-all for any other input
+exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+same => n,Goto(0,1)
 
-; Zero (0) - Voice memo help
-exten => 0,1,NoOp(=== Voice Memo Help ===)
-same => n,Goto(voice-memo,s,1)
+; F005: Hangup detection
+exten => h,1,NoOp(=== F005: Hangup Detected ===)
 
-; Delete confirmation
+; ###########################################################
+; ################ Confirm Delete Context ###################
+; ###########################################################
 [confirm-delete]
 exten => s,1,NoOp(=== Delete Confirmation ===)
-same => n,Background(ainslie/prompts/delete_confirmation_prompt)
-same => n,SayDigits(${MEMO_CODE})
+same => n,Goto(0,1)
+
+; Zero (0) - Replay delete confirmation
+exten => 0,1,NoOp(=== Replay Delete Confirmation ===)
+same => n,Background(ainslie/prompts/delete_confirmation)
+same => n,Background(digits/${MEMO_CODE:0:1}&digits/${MEMO_CODE:1:1}&digits/${MEMO_CODE:2:1})
 same => n,Background(ainslie/prompts/delete_confirmation_options)
-same => n,WaitExten(15)
-same => n,Goto(saved-memo,s,1)
+same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
+same => n,Goto(s,1)
 
 ; 9 - Confirm deletion
-exten => 9,1,NoOp(=== Confirm Deletion ===)
+exten => 9,1,NoOp(=== Confirm Deletion (Second Press) ===)
 same => n,System(rm -f /var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)
-same => n,Background(ainslie/prompts/deletion_success)
+same => n,Playback(ainslie/prompts/deletion_success)
 same => n,SayDigits(${MEMO_CODE})
-same => n,Goto(voice-memo,s,1)
+same => n,Goto(top-memo,s,1)
 
 ; Any other key - Cancel deletion
-exten => _X,1,NoOp(=== Cancel Deletion ===)
+exten => _[*#1-8],1,NoOp(=== Cancel Deletion ===)
 same => n,Background(ainslie/prompts/deletion_cancelled)
 same => n,Goto(saved-memo,s,1)
 
-[playback-handler]
-; Handler only sets LAST_RECORDING_FILE, no playback
-; Expects ARG1 to be the base file path (without extension)
-exten => s,1,NoOp(=== Playback Handler: Setting LAST_RECORDING_FILE to ${ARG1} ===)
-same => n,Set(LAST_RECORDING_FILE=${ARG1})
-same => n,Return()
+; F005: Hangup detection
+exten => h,1,NoOp(=== F005: Hangup Detected ===)
 
-; Random Message Context: Plays a random Ainslie recording 1-9 on pickup
+; ###########################################################
+; ################ Random Message Context ###################
+; ###########################################################
 [random-message]
 exten => 0,1,NoOp(=== Random Message: Play random Ainslie recording 1-9 ===)
 same => n,Set(RANDNUM=${RAND(1,9)})
@@ -230,6 +346,9 @@ same => n,NoOp(Selected random recording: ${RANDNUM})
 same => n,Background(ainslie/${RANDNUM}/recording)
 same => n,Goto(main-menu,s,1)
 
+; ###########################################################
+; ################### Ring Random Context ###################
+; ###########################################################
 [ring-random]
 exten => start,1,NoOp(=== Ringing Randomly ===)
 same => n,Set(TIMEOUT=$[${RAND(2,30)}])  ; Randomly choose between 2 to 15 seconds
