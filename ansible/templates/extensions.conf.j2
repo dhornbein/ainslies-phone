@@ -58,8 +58,16 @@ same => n,Goto(end,1)
 
 ; Star (*) - Repeat last played recording
 exten => *,1,NoOp(=== Repeat Last Recording ===)
-same => n,GotoIf($["${LAST_RECORDING_FILE}" = ""]?main-menu,s,1)
+same => n,GotoIf($["${LAST_RECORDING_FILE}" = ""]?random,1)
 same => n,Background(${LAST_RECORDING_FILE})
+same => n,Goto(end,1)
+
+; random - Play random recording
+exten => random,1,NoOp(=== Play Random Recording ===)
+same => n,Set(RANDNUM=${RAND(1,9)})
+same => n,NoOp(Selected random recording: ${RANDNUM})
+same => n,Set(LAST_RECORDING_FILE=ainslie/${RANDNUM}/recording)
+same => n,Background(ainslie/${RANDNUM}/recording)
 same => n,Goto(end,1)
 
 ; end recording playback
