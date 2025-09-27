@@ -97,8 +97,8 @@ See features.md for detailed status and notes.
         - **Press (*)**: Repeats the just-played message
         - **Press (#)**: Returns to main menu
         - **Enter 000-999**: Go to that recording code
-    - **If no recording exists**: "No recording found at [number]. To record a message, press 1. Press zero to hear this message again. Press pound to return to the main menu. To end the call, hang up."
-      - **Press 1**: "You may now record your message after the beep. Press pound when finished or hang up."
+    - **If no recording exists**: "No recording found at [number]. To record a message, press star. Press zero to hear this message again. Press pound to return to the main menu. To end the call, hang up."
+      - **Press (*)**: "You may now record your message after the beep. Press pound when finished or hang up."
         - Recording in progress: User records message (max 20 minutes; recordings shorter than 5 seconds are discarded and you will be prompted to try again)
         - **Press (#)**: Ends recording
         - **After recording (only if >= 5 seconds)**: "Your message has been saved at [number]. Press star to listen to it, press 1 to re-record, press 9 to delete, press pound to return to the main menu, or hang up to end the call."
@@ -147,7 +147,7 @@ Directory structure is complete. Wav files are 8kHz mono WAV files.
 - `post_recording_message.wav`: That was the recording at number [digits]. 
 
 - `no_recording_found.wav`: No recording found at number [digits]. 
-- `no_recording_options.wav`: To record a message at this number, press 1. Press pound to return to the memo menu. Press zero to repeat this message.
+- `no_recording_options.wav`: To record a message at this number, press star. Press pound to return to the memo menu. Press zero to repeat this message.
 
 - `recording_prompt.wav`: You may now record your message after the beep. Press pound when finished, or hang up.
 

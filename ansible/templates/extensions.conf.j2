@@ -180,17 +180,13 @@ same => n,Background(ainslie/prompts/no_recording_found)
 same => n,Background(digits/${MEMO_CODE:0:1}&digits/${MEMO_CODE:1:1}&digits/${MEMO_CODE:2:1})
 same => n,Goto(0,1)
 
-; 1 - Start recording
-exten => 1,1,NoOp(=== Start Recording ===)
+; Star (*) - Start recording
+exten => *,1,NoOp(=== Start Recording ===)
 same => n,Goto(record-memo,s,1)
 
 ; Hash (#) - Return to main top-memo menu
 exten => #,1,NoOp(=== Return to Top Memo Menu ===)
 same => n,Goto(top-memo,s,1)
-
-; Star (*) - Repeat this message
-exten => *,1,NoOp(=== Repeat No Memo Message ===)
-same => n,Goto(s,1)
 
 ; Zero (0) - Voice memo help
 exten => 0,1,NoOp(=== No Memo Help ===)
@@ -202,6 +198,9 @@ same => n,Goto(s,1)
 exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
 same => n,NoOp(=== Repeat No Memo Message ===)
 same => n,Goto(s,1)
+
+exten => _ZZ,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+same => n,Goto(top-memo,${EXTEN},1)
 
 ; 111-999 - Go to another recording
 exten => _ZZZ,1,NoOp(=== Go to recording ${EXTEN} ===)
