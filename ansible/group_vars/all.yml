@@ -15,7 +15,6 @@ ht801_sip_user: "ht801-aor"
 # Project paths
 project_user: "drew"
 project_home: "/home/{{ project_user }}"
-deploy_path: "{{ project_home }}/ainslie-phone"
 
 # System packages
 base_packages:

@@ -71,4 +71,4 @@
       
     - name: Deployment complete
       ansible.builtin.debug:
-        msg: "Code deployed to {{ deploy_path }} at {{ ansible_date_time.iso8601 }}"
+        msg: "Audio and configuration deployment complete at {{ ansible_date_time.iso8601 }}"

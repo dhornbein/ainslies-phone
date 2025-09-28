@@ -36,8 +36,10 @@
         timeout: 5
       tags: asterisk_config
 
-- name: Auto-provision HT801
-  ansible.builtin.import_playbook: ht801-autoprovision.yml
+# NOTE: HT801 auto-provisioning is currently disabled due to implementation issues
+# Use manual setup via ht801-setup.yml or follow the HT801-Setup-Guide.md
+# - name: Auto-provision HT801
+#   ansible.builtin.import_playbook: ht801-autoprovision.yml
 
 - name: Final verification and status
   hosts: all

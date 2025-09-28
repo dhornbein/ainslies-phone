@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Default number of log lines to display
+NUM_LINES=5
+
+# Parse arguments for custom number of log lines
+while getopts "n:" opt; do
+  case $opt in
+    n)
+      NUM_LINES=$OPTARG
+      ;;
+    *)
+      echo "Usage: $0 [-n number_of_log_lines]"
+      exit 1
+      ;;
+  esac
+done
+
+# Define the status file location
+STATUS_FILE="$HOME/asterisk_status.txt"
+
+# Get Asterisk service status
+ASTERISK_STATUS=$(sudo systemctl is-active asterisk)
+
+# Get disk space remaining on root filesystem
+DISK_SPACE=$(df -h / | awk 'NR==2 {print $4}')
+
+# Get the size of the Asterisk log file
+LOG_FILE="/var/log/asterisk/messages"
+if [ -f "$LOG_FILE" ]; then
+  LOG_LINES=$(sudo tail -n $NUM_LINES "$LOG_FILE")
+else
+  LOG_LINES="No log lines to display"
+fi
+
+# Get the number of active channels in Asterisk
+ACTIVE_CHANNELS=$(sudo asterisk -rx "core show channels" | grep -c 'active channel')
+
+# Output the status to the terminal
+echo "Asterisk Status: $ASTERISK_STATUS"
+echo "Disk Space Remaining on /: $DISK_SPACE"
+echo "Active Channels: $ACTIVE_CHANNELS"
+echo "Last $NUM_LINES Lines of Asterisk Log:"
+echo "$LOG_LINES"

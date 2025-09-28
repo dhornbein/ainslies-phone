@@ -1,6 +1,37 @@
 # Ainslie Phone Features
 
-## Primary Features
+## Outstanding Features
+
+### F602: Ansible Automated Deployment ☑
+**Description**: One-command deployment and updates via Ansible playbooks
+**Status**: Partially implemented - Core deployment working, HT801 automation not functional
+**Capabilities**:
+- `setup-ssh.yml`: Configure SSH key authentication (working)
+- `provision.yml`: Basic system setup and file deployment (working)
+- `install-asterisk.yml`: Professional Asterisk installation from source (working)
+- `network-setup.yml`: NetworkManager static IP configuration (working)
+- `update.yml`: Deploy Asterisk config changes with targeted reloads (working)
+- `ht801-autoprovision.yml`: HTTP API-based HT801 auto-configuration ❌ (broken)
+- `maintenance.yml`: System health checks and repairs (future)
+**Technical**: SSH over WiFi connection with ansible-playbook execution
+
+### F605: HT801 Auto-Provisioning ❌
+**Description**: Programmatic configuration of HT801 device via HTTP API
+**Status**: Not functional - implementation has critical bugs preventing execution
+**Next Steps**:
+- Research methods to configure the HT801 device programmatically.
+- Explore using the device's API or HTTP-based web interface for automation.
+- Ensure idempotent and secure configuration logic.
+**Issues**:
+- Login flow sets `ht801_logged_in` to raw URI object instead of boolean
+- References undefined variable `ht801_login_default` causing execution abort
+- Password rotation logic is incomplete and not idempotent
+- Tasks execute even when authentication fails (401/403 responses)
+**Current State**: Manual HT801 setup required via web interface
+**Technical**: Attempted RESTful HTTP POST requests to HT801 web interface API
+**Workaround**: Use manual configuration following HT801-Setup-Guide.md
+
+## Completed or Removed Features
 
 ### F001: Phone Pickup Detection ✅
 **Description**: System detects when visitor lifts handset from cradle
@@ -21,9 +52,9 @@
 - `#`: Random recording selection
 **Technical**: RFC2833 DTMF method with immediate response
 
-### F003: Audio Playback Engine ☑
+### F003: Audio Playback Engine ✅
 **Description**: High-quality audio playback of Ainslie's recordings
-**Status**: Core playback, DTMF-interrupt, and file structure complete. Volume normalization implemented via ffmpeg loudnorm.
+**Status**: Fully implemented and working
 **Capabilities**:
 - Multiple format support (WAV mono preferred)
 - Real-time transcoding via Asterisk
@@ -51,14 +82,12 @@
 - Clean session termination
 **Technical**: On-hook event handling with immediate audio stop
 
-## Interactive Features
-
-### F101: Help System ☑
+### F101: Help System ✅
 **Description**: Automated guidance for gallery visitors
-**Status**: Drafted, needs final voice selection or recording
-**Content**: Robot voice explaining navigation options
+**Status**: voice recording complete and uploaded
+**Content**: see spec.md for full script
 **Trigger**: Digit `0` or automatic after dial tone
-**Technical**: TTS-generated or pre-recorded help prompt
+**Technical**: pre-recorded help prompt in `source-audio/prompts/` converted and deployed to `sounds/prompts/`
 
 ### F102: Repeat Functionality ✅
 **Description**: Replay capability for current/last recording
@@ -106,8 +135,6 @@
 **Behavior**: After pressing 00, send to delete confirmation prompt
 **Status**: Fully implemented and working
 
-## System Features
-
 ### F201: Offline Operation ✅
 **Description**: Complete functionality without internet connectivity
 **Status**: Fully operational offline
@@ -145,8 +172,6 @@
 **Behavior**: During the recording process, if the recorded audio file is less than 30kb, it is automatically deleted and the user is prompted to record again.
 **Status**: Fully implemented and working
 
-## Memorial-Specific Features
-
 ### F301: Ainslie Recording Preservation
 **Description**: Digital preservation of Ainslie's voice recordings
 **Status**: nine recordings have been found
@@ -162,8 +187,6 @@
 - Traditional dial tone and audio quality
 - Respectful interaction design
 **Technical**: Audio processing to simulate vintage phone characteristics
-
-## Optional/Future Features
 
 ### F401: Invite Ringing ✅
 **Description**: Gentle periodic ringing to attract gallery visitors
@@ -204,53 +227,6 @@
 - Commit-based deployment tracking
 **Technical**: Local git repository on desktop development environment
 
-### F602: Ansible Automated Deployment ✅
-**Description**: One-command deployment and updates via Ansible playbooks
-**Status**: Implemented and tested (except HT801 auto-provision, not tested)
-**Capabilities**:
-- `setup-ssh.yml`: Configure SSH key authentication (working)
-- `provision.yml`: Basic system setup and file deployment (working)
-- `install-asterisk.yml`: Professional Asterisk installation from source (working)
-- `network-setup.yml`: NetworkManager static IP configuration (working)
-- `update.yml`: Deploy Asterisk config changes with targeted reloads (working)
-- `ht801-autoprovision.yml`: HTTP API-based HT801 auto-configuration (not tested)
-- `full-setup.yml`: Complete end-to-end automation orchestration (working)
-- `deploy-audio.yml`: Update audio content only (future)
-- `maintenance.yml`: System health checks and repairs (future)
-**Technical**: SSH over WiFi connection with ansible-playbook execution
-
-**Current Installation Results**:
-```bash
-# Complete automation pipeline implemented:
-ansible-playbook playbooks/setup-ssh.yml            # ✅ SSH keys configured
-ansible-playbook playbooks/provision.yml            # ✅ Base system ready  
-ansible-playbook playbooks/install-asterisk.yml     # ✅ Asterisk 18.26.4 running
-ansible-playbook playbooks/network-setup.yml        # ✅ Static IP networking
-ansible-playbook playbooks/update.yml               # ✅ Config deployment with targeted reloads
-ansible-playbook playbooks/ht801-autoprovision.yml  # 🆘 HTTP API auto-configuration
-ansible-playbook playbooks/full-setup.yml           # ✅ Complete end-to-end setup
-
-# One-command deployment:
-ansible-playbook playbooks/full-setup.yml           # 🎉 Everything automated!
-```
-
-**Asterisk Installation Features** ✅
-- Downloads latest Asterisk 18 LTS source automatically
-- Uses official `install_prereq` script for dependencies  
-- Includes bundled PJSIP for SIP support
-- Creates dedicated asterisk user with proper permissions
-- Installs systemd service with restart policies
-- Professional from-source build following official documentation
-- Total installation time: ~12 minutes with full compilation
-- Service validation and health checks included: Ansible Automated Deployment
-**Description**: One-command deployment and updates via Ansible playbooks
-**Capabilities**:
-- `provision.yml`: Full system setup from fresh Pi
-- `update.yml`: Deploy code/config changes
-- `deploy-audio.yml`: Update audio content only
-- `maintenance.yml`: System health checks and repairs
-**Technical**: SSH over WiFi connection with ansible-playbook execution
-
 ### F604: Remote Configuration Management ✅
 **Description**: Update system parameters without physical access
 **Status**: Fully implemented and working
@@ -261,20 +237,6 @@ ansible-playbook playbooks/full-setup.yml           # 🎉 Everything automated!
 - System service parameters via Ansible handlers (working)
 - Targeted Asterisk reloads (no full service restarts) (working)
 **Technical**: Ansible template-based configuration deployment with handlers
-
-### F605: HT801 Auto-Provisioning ❌
-**Description**: Programmatic configuration of HT801 device via HTTP API
-**Status**: Implemented but doesn't work, needs testing
-**Capabilities**:
-- Automatic device discovery and connectivity testing (working)
-- HTTP API authentication with multiple credential attempts (working)
-- Network configuration (static IP, gateway, DNS) (working)
-- SIP endpoint configuration (server, credentials, codecs) (working)
-- Audio settings optimization (gain, echo cancellation) (working)
-- Security hardening (password changes, access control) (working)
-- Automatic configuration application and device reboot (working)
-**Technical**: RESTful HTTP POST requests to HT801 web interface API
-**Benefits**: Eliminates manual SSH tunneling and web interface configuration
 
 ### F606: Intelligent Asterisk Management ✅
 **Description**: Granular Asterisk configuration management without service disruption

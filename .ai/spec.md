@@ -1,24 +1,32 @@
-# Ainslie Phone Gallery Installation Specification
+# Ainslie Memorial Gallery Installation Specification
 
 ## Project Overview
 A memorial gallery installation featuring an interactive retro telephone system that plays recordings of a departed friend named Ainslie. Pick up the phone and experience her voice as if we were still connected through underground wires.
 
-**Current Status**: 
-- F001: Phone Pickup Detection ✅
-- F002: Keypad Navigation System ✅
-- F003: Audio Playback Engine ✅ (volume normalization implemented)
-- F004: Recording Organization System ✅
-- F005: Hangup Detection & Cleanup ✅
-- F101: Help System ☑ (drafted, needs final voice/recording)
-- F102: Repeat Functionality ✅
-- F103: Random Selection ❌ (Removed by design)
-- F201: Offline Operation ✅
-- F202: Boot Sequence Management ✅
-- F203: Content Update System ✅ (update playbook works perfectly)
-- F204: Static Network Configuration ❌ (removed as a task)
-- F303: Memorial Ambiance ✅
+*For current implementation status and feature details, see [features.md](features.md).*
 
-See features.md for detailed status and notes.
+## Development Prerequisites
+
+### Hardware Requirements
+- **Raspberry Pi 5** with Raspberry Pi OS
+- **Grandstream HT801 v2** (1 FXS port ATA)
+- **HTMengt 2500** analog desk phone
+- **Ethernet cables** for Pi-to-HT801 connection
+- **MicroSD card** (32GB+ recommended)
+
+### Software Tooling
+- **Ansible** (control machine): `pip install ansible ansible-core`
+- **SSH tools**: `ssh`, `sshpass` (`sudo apt install sshpass`)  
+- **Audio processing**: `ffmpeg` with loudnorm filter
+- **Git** for version control and deployment
+- **Text editor** with YAML/Jinja2 syntax support
+
+### Network Setup
+- **Static IP configuration**: Pi at 192.168.50.10, HT801 at 192.168.50.20
+- **Ethernet interface** on Pi for direct HT801 connection
+- **SSH access** to Pi (key-based authentication)
+
+See [ansible/README.md](../ansible/README.md) for detailed setup instructions.
 
 ## Core Concept
 - **Primary Device**: HTMengt 2500 Analog Desk Phone

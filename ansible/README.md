@@ -1,4 +1,59 @@
-# Audio Content Update Workflow (F203)
+# Ansible Deployment Guide
+
+This directory contains comprehensive Ansible automation for the Ainslie Phone Gallery project, handling everything from initial Pi setup to ongoing content updates.
+
+## Prerequisites
+
+### Desktop/Control Machine
+- **Ansible**: `pip install ansible ansible-core`
+- **sshpass**: `sudo apt install sshpass` (Ubuntu/Debian) or `brew install sshpass` (macOS)
+- **SSH client** with key generation capability
+- **Git** for version control
+
+### Raspberry Pi 5 Initial Setup
+When flashing the SD card with Raspberry Pi Imager:
+1. **Enable SSH** in advanced options
+2. **Set username**: `drew`
+3. **Set password**: Choose a secure password (needed for initial SSH key setup only)
+4. **Configure WiFi** if needed
+5. **Set hostname**: `pi5phone`
+
+Pi should be accessible at `pi5phone.local` or `pi5phone` via SSH.
+
+## Quick Start
+
+### First Time Setup (Fresh Pi)
+```bash
+cd ansible
+
+# 1. Setup SSH keys (requires Pi password, one time only)
+ansible-playbook playbooks/setup-ssh.yml
+
+# 2. Basic system provisioning 
+ansible-playbook playbooks/provision.yml
+
+# 3. Install Asterisk from source (~12 minutes)
+ansible-playbook playbooks/install-asterisk.yml
+
+# 4. Network and Asterisk configuration
+ansible-playbook playbooks/full-setup.yml
+
+# 5. Manual HT801 configuration required (see below)
+```
+
+### Day-to-Day Development
+```bash
+# Deploy code/config changes
+ansible-playbook playbooks/update.yml
+
+# Update audio content only
+ansible-playbook playbooks/update.yml --tags audio
+
+# Test connectivity
+ansible all -m ping
+```
+
+## Audio Content Update Workflow
 
 The system supports simple, automated updates of all phone audio content:
 
@@ -13,11 +68,13 @@ The system supports simple, automated updates of all phone audio content:
   - Sync files to `/var/lib/asterisk/sounds/ainslie/` with correct permissions
   - No Asterisk restart is required for new audio
 
-  ```bash
-  # use watch mode for automatic updates on file changes
-  chokidar  -c "ansible-playbook playbooks/update.yml --tags asterisk_config"
-  ```
 3. **Dial a single digit (1-9) on the phone** to play the corresponding recording. DTMF response is immediate and snappy.
+
+**Watch Mode for Development:**
+```bash
+# Automatic updates on file changes (requires chokidar-cli)
+chokidar -c "ansible-playbook playbooks/update.yml --tags asterisk_config"
+```
 
 **Technical details:**
 - Normalization: ffmpeg `loudnorm=I=-18:TP=-1:LRA=11` for consistent volume
@@ -28,10 +85,12 @@ The system supports simple, automated updates of all phone audio content:
 
 This directory contains Ansible automation for the complete HT801 and Asterisk setup process described in the HT801-Setup-Guide.md.
 
+**Note**: HT801 auto-provisioning is currently work-in-progress and not functional. Use manual setup for now.
+
 ## Quick Setup Commands
 
 ```bash
-# Complete setup from scratch (includes HT801 auto-provisioning)
+# Complete setup from scratch (network + Asterisk, manual HT801 setup required)
 cd ansible
 
 # 1. Setup SSH keys (first time only)
@@ -43,29 +102,29 @@ ansible-playbook playbooks/provision.yml
 # 3. Install Asterisk from source
 ansible-playbook playbooks/install-asterisk.yml
 
-# 4. Full automated setup (network + Asterisk + HT801 auto-config)
+# 4. Setup network and Asterisk configuration
 ansible-playbook playbooks/full-setup.yml
 
-# Alternative: Step-by-step manual approach
+# 5. Manual HT801 configuration (follow HT801-Setup-Guide.md)
 ansible-playbook playbooks/ht801-setup.yml          # Manual HT801 config
 ansible-playbook playbooks/update.yml               # Deploy/update configs only
 ```
 
-## HT801 Auto-Provisioning ✨ **NEW**
+## HT801 Configuration Status ⚠️ **WORK IN PROGRESS**
 
-The system now supports **automatic HT801 configuration** via HTTP API calls, eliminating most manual web interface configuration:
+HT801 auto-provisioning is currently under development and not functional. Manual configuration is required:
 
 ```bash
-# Auto-configure HT801 only
-ansible-playbook playbooks/ht801-autoprovision.yml
+# Manual HT801 configuration (current working method)
+ansible-playbook playbooks/ht801-setup.yml
 
-# Complete automated setup (recommended)
-ansible-playbook playbooks/full-setup.yml
+# Follow the detailed manual setup guide
+# See: ../.ai/HT801-Setup-Guide.md
 ```
 
-**What Gets Auto-Configured:**
-- ✅ Static IP address (192.168.50.20)
-- ✅ Network settings (subnet, gateway, DNS)
+**Manual Configuration Required:**
+- Static IP address (192.168.50.20)
+- Network settings (subnet, gateway, DNS)
 - ✅ SIP server configuration (points to Pi)
 - ✅ SIP user credentials (ht801-aor)
 - ✅ Audio codec settings (G.711 μ-law)
@@ -96,13 +155,10 @@ ansible-playbook playbooks/update.yml --tags=asterisk_verify
 
 ### HT801 Setup
 ```bash
-# Full HT801 and Asterisk configuration
+# Full HT801 and Asterisk configuration (manual HT801 setup)
 ansible-playbook playbooks/ht801-setup.yml
 
-# Auto-provision HT801 via HTTP API (recommended)
-ansible-playbook playbooks/ht801-autoprovision.yml
-
-# Complete automated setup (network + asterisk + HT801)
+# Network and Asterisk setup only (HT801 manual config required)
 ansible-playbook playbooks/full-setup.yml
 
 # Check connectivity only
@@ -114,9 +170,9 @@ ansible-playbook playbooks/ht801-setup.yml --tags=verify
 
 ## Manual HT801 Configuration
 
-⚠️ **Note**: Most HT801 configuration is now automated via `playbooks/ht801-autoprovision.yml` or `playbooks/full-setup.yml`. Manual configuration is only needed as a fallback.
+⚠️ **Note**: HT801 auto-provisioning is currently not functional. Manual configuration is required for all setups.
 
-If auto-provisioning fails, you'll need to configure manually:
+Manual HT801 configuration steps:
 
 1. **Get current IP**: Pick up phone, dial `***`, then `02`
 2. **SSH Tunnel**: `ssh -L 8080:<current_ip>:80 drew@pi5phone`
@@ -151,8 +207,8 @@ ansible/
 │   ├── network-setup.yml      # Network configuration for HT801
 │   ├── install-asterisk.yml   # Asterisk installation from source
 │   ├── ht801-setup.yml       # Complete HT801 + Asterisk config
-│   ├── ht801-autoprovision.yml # HT801 auto-config via HTTP API ✨ NEW
-│   ├── full-setup.yml        # Complete automated setup ✨ NEW
+│   ├── ht801-autoprovision.yml # HT801 auto-config (⚠️ WIP - not functional)
+│   ├── full-setup.yml        # Network + Asterisk setup
 │   └── update.yml            # Deploy configs and project updates
 ├── templates/
 │   ├── pjsip.conf.j2         # SIP configuration template

@@ -30,27 +30,6 @@
         name: "{{ base_packages }}"
         state: present
         
-    - name: Create project directories
-      tags: copy
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: directory
-        owner: "{{ project_user }}"
-        group: "{{ project_user }}"
-        mode: '0755'
-      loop:
-        - "{{ deploy_path }}"
-
-    - name: Deploy project files from local relative path
-      tags: copy
-      ansible.builtin.copy:
-        src: "../../"
-        dest: "{{ deploy_path }}/"
-        owner: "{{ project_user }}"
-        group: "{{ project_user }}"
-        mode: '0644'
-        remote_src: no
-
     - name: Ensure Asterisk service is enabled
       tags: service
       ansible.builtin.systemd:
@@ -58,6 +37,69 @@
         enabled: yes
         state: started
       failed_when: false  # May not be installed yet
+
+    - name: Create asterisk symlink in user home
+      tags: home_setup
+      ansible.builtin.file:
+        src: /etc/asterisk
+        dest: "{{ project_home }}/asterisk"
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        state: link
+
+    - name: Create extensions.conf symlink in user home
+      tags: home_setup
+      ansible.builtin.file:
+        src: "{{ project_home }}/asterisk/extensions.conf"
+        dest: "{{ project_home }}/extensions.conf"
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        state: link
+
+    - name: Create pjsip.conf symlink in user home
+      tags: home_setup
+      ansible.builtin.file:
+        src: "{{ project_home }}/asterisk/pjsip.conf"
+        dest: "{{ project_home }}/pjsip.conf"
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        state: link
+
+    - name: Create sounds symlink in user home
+      tags: home_setup
+      ansible.builtin.file:
+        src: /var/lib/asterisk/sounds
+        dest: "{{ project_home }}/sounds"
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        state: link
+
+    - name: Create status.sh script in user home
+      tags: home_setup
+      ansible.builtin.template:
+        src: ../templates/status.sh.j2
+        dest: "{{ project_home }}/status.sh"
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        mode: '0755'
+
+    - name: Create recovery_script.sh in user home
+      tags: home_setup
+      ansible.builtin.template:
+        src: ../templates/recovery_script.sh.j2
+        dest: "{{ project_home }}/recovery_script.sh"
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        mode: '0755'
+
+    - name: Create random_ring.sh script in user home
+      tags: home_setup
+      ansible.builtin.template:
+        src: ../templates/random_ring.sh.j2
+        dest: "{{ project_home }}/random_ring.sh"
+        owner: "{{ project_user }}"
+        group: "{{ project_user }}"
+        mode: '0755'
 
     - name: Provision complete
       ansible.builtin.debug:

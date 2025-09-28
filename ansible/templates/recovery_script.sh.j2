@@ -1,0 +1,20 @@
+#!/bin/bash
+
+LOG_FILE=~/recovery.log
+
+# Check Asterisk service
+if ! sudo systemctl is-active --quiet asterisk; then
+  sudo systemctl restart asterisk
+  if sudo systemctl is-active --quiet asterisk; then
+    echo "$(date): Asterisk service restarted successfully." >> "$LOG_FILE"
+  else
+    echo "$(date): Failed to restart Asterisk service." >> "$LOG_FILE"
+  fi
+fi
+
+# Check disk space
+DISK_SPACE=$(df --output=avail / -BG | tail -n 1 | tr -d 'G')
+
+if [ "$DISK_SPACE" -lt 4 ]; then
+  echo "$(date): Low disk space: $($DISK_SPACE)G." >> "$LOG_FILE"
+fi
