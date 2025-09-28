@@ -312,3 +312,17 @@ ansible-playbook playbooks/full-setup.yml --tags verify
 **Technical**:
 - Dialplan updates in `extensions.conf.j2` to include new contexts and logic.
 - Use of Asterisk applications like `Background()`, `Record()`, and `System()` for advanced functionality.
+
+## Documentation Features
+
+### F801: Case Study and Technical Blog Post
+**Description**: Create a detailed case study and technical blog post about the Ainslie Phone project.
+**Status**: Planned, chosen photos ready for editing
+**Goals**:
+- Highlight the project's technical challenges and solutions.
+- Document the design and implementation process.
+- Share insights and lessons learned for similar projects.
+**Deliverables**:
+- A comprehensive case study document.
+- A blog post suitable for publication on technical platforms.
+**Technical**: Include diagrams, code snippets, and performance metrics where applicable.
