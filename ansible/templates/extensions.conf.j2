@@ -105,7 +105,7 @@ same => n,Gosub(idle,reset,1)
 same => n,Goto(0,1) ; Go to help prompt
 
 ; Handle 3-digit codes 111-999
-exten => _ZZZ,1,NoOp(=== Voice Memo Code: ${EXTEN} ===)
+exten => _ZXX,1,NoOp(=== Voice Memo Code: ${EXTEN} ===)
 same => n,Set(MEMO_CODE=${EXTEN})
 same => n,GotoIf($[${STAT(e,/var/lib/asterisk/sounds/recordings/${MEMO_CODE}.wav)}]?play-memo,s,1)
 same => n,Goto(no-memo,s,1)
@@ -132,7 +132,7 @@ same => n,Goto(0,1)
 exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
 same => n,Goto(top-memo,s,1)
 
-exten => _ZZ,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+exten => _ZX,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
 same => n,Goto(top-memo,s,1)
 
 ; F005: Hangup detection
@@ -172,15 +172,15 @@ same => n,Goto(confirm-delete,s,1)
 exten => *,1,NoOp(=== Repeat This Message ===)
 same => n,Goto(top-memo,*,1)
 
-; 111-999 - Go to another recording
-exten => _ZZZ,1,NoOp(=== Go to recording ${EXTEN} ===)
-same => n,Goto(top-memo,${EXTEN},1)
-
 ; catch-all for any other input
 exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
 same => n,Goto(top-memo,${EXTEN},1)
 
-exten => _ZZ,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+exten => _ZX,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+same => n,Goto(top-memo,${EXTEN},1)
+
+; 111-999 - Go to another recording
+exten => _ZXX,1,NoOp(=== Go to recording ${EXTEN} ===)
 same => n,Goto(top-memo,${EXTEN},1)
 
 ; F005: Hangup detection
@@ -216,11 +216,11 @@ exten => _Z,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
 same => n,NoOp(=== Repeat No Memo Message ===)
 same => n,Goto(s,1)
 
-exten => _ZZ,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+exten => _ZX,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
 same => n,Goto(top-memo,${EXTEN},1)
 
 ; 111-999 - Go to another recording
-exten => _ZZZ,1,NoOp(=== Go to recording ${EXTEN} ===)
+exten => _ZXX,1,NoOp(=== Go to recording ${EXTEN} ===)
 same => n,Goto(top-memo,${EXTEN},1)
 
 ; F005: Hangup detection
