@@ -14,8 +14,8 @@ writeprotect=no
 ; Avoid using literal quotes here (Asterisk would set the value to the two characters: "").
 LAST_RECORDING_FILE=
 LAST_MEMO_CODE=
-TONE_GENTAL=442/500,262/100,330/200,220/2000
-TONE_REVERSE=220/500,330/100,262/200,442/2000
+TONE_UP=442/500,262/100,330/200,220/2000
+TONE_DOWN=220/500,330/100,262/200,442/2000
 HELP_REPEAT_TIMEOUT=5
 MIN_RECORDING_SIZE=30000
 MAX_RECORDING_SILENCE=6
@@ -28,7 +28,7 @@ exten => 0,1,NoOp(=== F001: Phone Pickup Detection ===)
 same => n,Goto(main-menu,welcome,1)
 
 ; Capture any single digit and send to main menu
-exten => _X,1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+exten => _[0-9#*],1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
 same => n,Goto(main-menu,${EXTEN},1)
 
 ; F005: Hangup detection
@@ -43,7 +43,7 @@ exten => welcome,1,NoOp(=== Welcome ===)
 same => n,Answer()
 same => n,Playtones(dial)
 same => n,WaitExten(2)
-same => n,Playtones(${TONE_GENTAL})
+same => n,Playtones(${TONE_UP})
 same => n,WaitExten(2)
 same => n,Background(ainslie/prompts/help_main_menu)
 same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
@@ -76,7 +76,7 @@ same => n,Goto(end,1)
 ; end recording playback
 exten => end,1,NoOp(=== End Recording Playback ===)
 same => n,WaitExten(1)
-same => n,Playtones(${TONE_REVERSE})
+same => n,Playtones(${TONE_DOWN})
 same => n,WaitExten(1.2)
 same => n,Goto(s,1)
 
@@ -88,7 +88,7 @@ same => n,Goto(top-memo,s,1)
 exten => 0,1,NoOp(=== Press 0 Zero ===)
 same => n,Background(ainslie/prompts/help_main_menu)
 same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
-same => n,Playtones(${TONE_GENTAL})
+same => n,Playtones(${TONE_UP})
 same => n,WaitExten(2)
 same => n,Gosub(idle,count,1)
 same => n,Goto(0,1) 
@@ -123,7 +123,7 @@ same => n,Goto(main-menu,s,1)
 exten => 0,1,NoOp(=== Voice Memo Help ===)
 same => n,Background(ainslie/prompts/help_voice_memo_menu)
 same => n,WaitExten(${HELP_REPEAT_TIMEOUT})
-same => n,Playtones(${TONE_GENTAL})
+same => n,Playtones(${TONE_UP})
 same => n,WaitExten(2)
 same => n,Gosub(idle,count,1)
 same => n,Goto(0,1)
@@ -379,6 +379,10 @@ same => n,Set(RANDNUM=${RAND(1,9)})
 same => n,NoOp(Selected random recording: ${RANDNUM})
 same => n,Background(ainslie/${RANDNUM}/recording)
 same => n,Goto(main-menu,s,1)
+
+; Capture any single digit and send to main menu
+exten => _[1-9#*],1,NoOp(=== Unmatched Digit Pressed: ${EXTEN} ===)
+same => n,Goto(main-menu,${EXTEN},1)
 
 ; ###########################################################
 ; ################### Idle Playback Context #################
