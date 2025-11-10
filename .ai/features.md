@@ -321,8 +321,34 @@ ansible-playbook playbooks/full-setup.yml --tags verify
 **Goals**:
 - Highlight the project's technical challenges and solutions.
 - Document the design and implementation process.
-- Share insights and lessons learned for similar projects.
 **Deliverables**:
 - A comprehensive case study document.
 - A blog post suitable for publication on technical platforms.
-**Technical**: Include diagrams, code snippets, and performance metrics where applicable.
+**Technical**: Include diagrams, code snippets, and metrics where applicable.
+
+### F802: Online website for the Ainslie Phone
+**Description**: Develop a dedicated website to showcase the Ainslie Phone project.
+**Status**: MVP implemented
+**Goals**:
+- responsive website contained in /docs/ folder of the repo ✅
+- Interactive phone with clickable buttons to simulate the experience ✅
+- A log for button presses, instructional text, and media playback ✅
+**Deliverables**:
+- A fully functional website hosted via GitHub Pages. ✅
+**Technical**: HTML, CSS, JavaScript for interactivity and media handling. As few dependencies as possible while having solid reactivity and usability. Update convert_audio.sh to add web-optimized audio files (ogg/mp3) to the /docs/media/ folder. ✅
+**Implementation**:
+
+There is a photo of a phone in a white void. A bouncing "pick up the phone" text invites the user to click the headset to start the experience. Once clicked, we shift closer to the keypad and the headset is off the hook, out of focus along the edge of the screen. The user clicks numbers and moves through the same menu structure as the physical phone, with audio playback and text instructions.
+
+**MVP Complete**: Basic functionality with main menu, keypad, audio playback, and activity log implemented.
+
+### F803: Voice Memo Web Interface
+**Description**: Add voice memo functionality to the web interface to match the physical phone experience.
+**Status**: Planned
+**Goals**:
+- Implement 3-digit code entry (111-999) for voice memo access
+- Playback existing voice memos
+- Display appropriate prompts and instructions
+- Match the state machine behavior from the Asterisk dialplan
+**Technical**: Extend the JavaScript state machine to handle memo contexts (top-memo, play-memo, no-memo)
+**Note**: Recording new memos is not feasible in web interface without backend server

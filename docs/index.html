@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive memorial phone experience honoring Ainslie">
+    <title>Ainslie Phone - Interactive Memorial</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="container">
+        <section class="phone-section" aria-label="Phone interface">
+            <h1>Ainslie Phone</h1>
+            <button id="pickup-btn" class="pickup-button" aria-label="Pick up the phone to start">
+                Pick Up Phone
+            </button>
+            
+            <div id="keypad" class="keypad disabled" role="group" aria-label="Phone keypad">
+                <button class="key" data-key="1" aria-label="Digit 1">1</button>
+                <button class="key" data-key="2" aria-label="Digit 2">2</button>
+                <button class="key" data-key="3" aria-label="Digit 3">3</button>
+                <button class="key" data-key="4" aria-label="Digit 4">4</button>
+                <button class="key" data-key="5" aria-label="Digit 5">5</button>
+                <button class="key" data-key="6" aria-label="Digit 6">6</button>
+                <button class="key" data-key="7" aria-label="Digit 7">7</button>
+                <button class="key" data-key="8" aria-label="Digit 8">8</button>
+                <button class="key" data-key="9" aria-label="Digit 9">9</button>
+                <button class="key" data-key="*" aria-label="Star key">*</button>
+                <button class="key" data-key="0" aria-label="Digit 0">0</button>
+                <button class="key" data-key="#" aria-label="Hash key">#</button>
+            </div>
+            
+            <button id="hangup-btn" class="hangup-button" style="display: none;" aria-label="Hang up the phone">
+                Hang Up
+            </button>
+        </section>
+        
+        <section class="log-section" aria-label="Activity log">
+            <h2>Activity Log</h2>
+            <div id="activity-log" class="activity-log" role="log" aria-live="polite"></div>
+        </section>
+    </main>
+    
+    <script src="phone.js"></script>
+</body>
+</html>
