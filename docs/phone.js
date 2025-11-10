@@ -5,13 +5,14 @@
 
 class AinsliePhone {
     constructor() {
+        console.log('AinsliePhone: Initializing...');
         // Phone state
         this.state = 'idle'; // idle, dialtone, main-menu, playing
         this.lastRecordingFile = null;
         this.currentAudio = null;
         this.idleCount = 0;
         this.maxIdleCount = 5;
-        this.helpRepeatTimeout = 5000; // 5 seconds
+        this.helpRepeatTimeout = 8000; // 8 seconds
         this.helpTimeoutId = null;
         this.pendingCallbacks = []; // Track pending timeouts/callbacks
         
@@ -72,6 +73,7 @@ class AinsliePhone {
             }
         });
         
+        console.log('AinsliePhone: Initialization complete');
         this.log('System ready. Pick up the phone to begin.', 'system');
     }
     
@@ -90,6 +92,7 @@ class AinsliePhone {
     
     clearAllPendingCallbacks() {
         // Clear all pending timeouts to prevent race conditions
+        console.log(`AinsliePhone: Clearing ${this.pendingCallbacks.length} pending callbacks`);
         this.pendingCallbacks.forEach(id => clearTimeout(id));
         this.pendingCallbacks = [];
         this.clearHelpTimeout();
@@ -100,11 +103,15 @@ class AinsliePhone {
     }
     
     pickup() {
-        this.log('Phone picked up', 'system');
+        console.log('AinsliePhone: pickup() called');
         this.clearAllPendingCallbacks();
         
         // Initialize audio context on first interaction
         this.ensureAudioContext();
+        
+        // Update phone state classes
+        document.body.classList.remove('phone-on-hook');
+        document.body.classList.add('phone-off-hook');
         
         this.state = 'dialtone';
         this.pickupBtn.style.display = 'none';
@@ -129,11 +136,17 @@ class AinsliePhone {
     }
     
     hangup() {
+        console.log('AinsliePhone: hangup() called');
         this.log('Phone hung up', 'system');
         this.playHangupSound();
         this.stopAudio();
         this.stopAllTones();
         this.clearAllPendingCallbacks();
+        
+        // Update phone state classes
+        document.body.classList.remove('phone-off-hook');
+        document.body.classList.add('phone-on-hook');
+        
         this.state = 'idle';
         this.lastRecordingFile = null;
         this.pickupBtn.style.display = 'block';
@@ -144,7 +157,7 @@ class AinsliePhone {
     handleDigit(digit) {
         if (this.state === 'idle') return;
         
-        this.log(`Button pressed: ${digit}`, 'button');
+        console.log(`AinsliePhone: handleDigit(${digit}) - state: ${this.state}`);
         
         // IMPORTANT: Stop everything immediately for instant response
         this.stopAudio();
@@ -173,6 +186,7 @@ class AinsliePhone {
             this.repeatLast();
         } else if (digit === '#') {
             // Voice memo mode - not implemented in MVP
+            console.log('AinsliePhone: Voice memo not available (MVP)');
             this.log('Voice memo feature not available in this version', 'system');
             this.state = 'main-menu';
             this.scheduleHelpRepeat();
@@ -180,7 +194,7 @@ class AinsliePhone {
     }
     
     playRecording(digit) {
-        this.log(`Playing Ainslie's recording #${digit}`, 'audio');
+        console.log(`AinsliePhone: playRecording(${digit})`);
         this.state = 'playing';
         this.lastRecordingFile = digit;
         
@@ -195,7 +209,9 @@ class AinsliePhone {
     }
     
     repeatLast() {
+        console.log(`AinsliePhone: repeatLast() - lastRecordingFile: ${this.lastRecordingFile}`);
         if (!this.lastRecordingFile) {
+            console.log('AinsliePhone: No recording to repeat');
             this.log('No recording to repeat', 'system');
             this.state = 'main-menu';
             this.scheduleHelpRepeat();
@@ -215,20 +231,19 @@ class AinsliePhone {
     }
     
     playHelp() {
-        this.log('Playing help message', 'system');
+        console.log('AinsliePhone: playHelp() called');
         this.state = 'main-menu';
         
         const helpText = `Welcome to the Ainslie Phone. Press digits 1 through 9 to hear different recordings from Ainslie. Press 0 to hear this help message again. Press star (*) to repeat the last recording you heard.`;
         
-        this.log(helpText, 'system');
-        
         const audioPath = 'media/prompts/help_main_menu.mp3';
-        this.playAudio(audioPath, 'Help Message', () => {
+        this.playAudio(audioPath, helpText, () => {
             this.scheduleHelpRepeat();
         });
     }
     
     scheduleHelpRepeat() {
+        console.log(`AinsliePhone: Scheduling help repeat in ${this.helpRepeatTimeout}ms`);
         this.clearHelpTimeout();
         this.helpTimeoutId = setTimeout(() => {
             this.incrementIdleCount();
@@ -246,8 +261,9 @@ class AinsliePhone {
     
     incrementIdleCount() {
         this.idleCount++;
+        console.log(`AinsliePhone: idleCount incremented to ${this.idleCount}`);
         if (this.idleCount >= this.maxIdleCount) {
-            this.log('Entering idle mode', 'system');
+            console.log('AinsliePhone: Max idle count reached, entering idle mode');
             // In full version, would play random recordings
         }
     }
@@ -257,6 +273,7 @@ class AinsliePhone {
     }
     
     playAudio(src, label, onEnded) {
+        console.log(`AinsliePhone: playAudio(${src}, ${label})`);
         this.stopAudio();
         
         const audioElement = document.createElement('audio');
@@ -277,12 +294,13 @@ class AinsliePhone {
         
         // Handle successful playback end
         audioElement.addEventListener('ended', () => {
+            console.log(`AinsliePhone: Audio ended - ${src}`);
             if (onEnded) onEnded();
         });
         
         // Handle loading errors
         audioElement.addEventListener('error', (e) => {
-            console.error('Audio error:', e);
+            console.error('AinsliePhone: Audio error:', e);
             this.log(`Error loading audio: ${src}`, 'system');
             if (onEnded) onEnded();
         });
@@ -320,7 +338,7 @@ class AinsliePhone {
     
     playTone(type, duration, callback) {
         if (!this.ensureAudioContext()) {
-            console.warn('AudioContext not initialized, using silent tone');
+            console.warn('AinsliePhone: AudioContext not initialized, using silent tone');
             const timeoutId = setTimeout(() => {
                 if (callback) callback();
             }, duration);
@@ -346,7 +364,6 @@ class AinsliePhone {
                 break;
         }
         
-        this.log(description, 'system');
         this.stopAllTones();
         
         // For dial tone (continuous), play both frequencies simultaneously
@@ -508,6 +525,7 @@ class AinsliePhone {
     
     stopAudio() {
         if (this.currentAudio) {
+            console.log('AinsliePhone: stopAudio() - stopping current audio element');
             this.currentAudio.pause();
             this.currentAudio.currentTime = 0;
             // Setting to null will allow garbage collection to clean up listeners
@@ -564,5 +582,7 @@ class AinsliePhone {
 
 // Initialize phone when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('AinsliePhone: DOM ready, initializing...');
     window.phone = new AinsliePhone();
+    console.log('AinsliePhone: Instance created and attached to window.phone');
 });
